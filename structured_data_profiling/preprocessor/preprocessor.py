@@ -16,7 +16,7 @@ class Preprocessor:
         xproc = pd.DataFrame()
 
         for i in self.num:
-            x[i] = pd.cut(x[i], bins=min(self.bins, x[i].nunique())).astype(str)
+            x[i] = pd.cut(x[i], bins=min(self.bins, x[i].nunique()), right=False).astype(str)
 
         for i in self.cat:
             xc = pd.get_dummies(x[i], prefix=i)

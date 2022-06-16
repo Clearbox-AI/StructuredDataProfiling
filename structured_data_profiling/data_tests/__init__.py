@@ -9,5 +9,6 @@ __all__ = [
     "find_ordinal_columns",
     "identify_dates",
     "identify_redundant_dates",
-    "column_profiles",
+    "fit_distributions",
+    "get_features_correlation",
 ]

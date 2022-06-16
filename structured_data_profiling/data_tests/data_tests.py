@@ -44,36 +44,6 @@ def check_precision(x, tol=1e-8):
     return prec
 
 
-def column_profiles(data):
-
-    col_dict = {}
-
-    for i in data.columns:
-
-        loc_dict = {'dtype': data[i].dtype, 'nunique': data[i].nunique(),
-                    'na_frac': data[i].isna().sum() / data.shape[0]}
-
-        if data[i].dtype != 'object':
-            loc_dict['non_negative'] = (data[i].fillna(0) >= 0).sum() / data.shape[0] == 1
-            loc_dict['non_positive'] = (data[i].fillna(0) <= 0).sum() / data.shape[0] == 1
-            loc_dict['min'] = data[i].min()
-            loc_dict['max'] = data[i].max()
-            loc_dict['mean'] = data[i].mean()
-            loc_dict['representation'] = check_precision(data[i].sample(n=min(1000, data.shape[0])))
-            loc_dict['distribution'] = fit_distributions(data[i].sample(n=min(1000, data.shape[0])))
-        else:
-            loc_dict['most_frequent'] = [data[i].value_counts().keys()[0], data[i].value_counts()[0]]
-            loc_dict['least_frequent'] = [data[i].value_counts().keys()[-1], data[i].value_counts()[-1]]
-            if loc_dict['nunique'] == 2:
-                loc_dict['distribution'] = 'Bernoulli'
-            else:
-                loc_dict['distribution'] = 'Categorical'
-
-        col_dict[i] = loc_dict
-
-    return col_dict
-
-
 def check_cardinality(data, threshold=0.005, frac=0.5):
     # Identify columns containing unique value
     unique = {}
@@ -319,18 +289,28 @@ def get_features_correlation(X):
     return features_correlation
 
 
-def check_label_correlation(Xproc, cat_cols, p_tr = 0.9, n_min=100):
+def get_label_correlation(Xproc, cat_cols, p_tr=0.99, n_min=100):
     list2d = list(cat_cols.values())
     merged = list(itertools.chain(*list2d))
     corr = []
+
     for i in merged:
         for j in merged:
-            d = Xproc[i][Xproc[j] == 1].shape[0]
-            p = Xproc[i][Xproc[j] == 1].sum() / d
-            if p > p_tr and i != j and d > n_min:
+            mask = Xproc[j] == 1
+            d = Xproc[i][mask].shape[0]
+            p = Xproc[i][mask].sum() / d
+            sample2 = np.random.choice(np.arange(mask.sum()), mask.sum(), replace=False)
+            p2 = Xproc[i].iloc[sample2].sum() / d
+            delta = p-p2
+            if p > p_tr and i != j and d > n_min and delta > 0.05:
                 corr.append((i, j, p))
 
-    return corr
+    anomalies = []
+    for i in corr:
+        i1 = np.where((Xproc[i[1]] == 1) & (Xproc[i[0]] == 0))[0]
+        if (len(i1) > 0) and (i[2] > 0.99):
+            anomalies.append([i[1], i[0], i1])
 
+    return corr, anomalies
 
 

@@ -108,6 +108,7 @@ class DatasetProfiler:
         self.too_much_info = None
         self.feature_selection = None
         self.n_samples = n_samples
+        self.warnings = None
 
         return
 
@@ -115,15 +116,21 @@ class DatasetProfiler:
 
         unique, binary, id_column, high_cardinality, rare_labels = check_cardinality(self.reduced_data_sample)
         self.column_profiles = {}
+        self.warnings = {}
 
         self.high_cardinality = high_cardinality
         self.rare_labels = rare_labels
         self.unique_value = unique
 
-        self.column_profiles = column_profiles(self.reduced_data_sample)
+        self.column_profiler(self.reduced_data_sample)
 
         self.reduced_data_sample = self.reduced_data_sample.drop(list(unique.keys()), axis=1)
+        for i in list(unique.keys()):
+            self.warnings[i] = 'Unique value'
+
         self.reduced_data_sample = self.reduced_data_sample.drop(list(high_cardinality.keys()), axis=1)
+        for i in list(high_cardinality.keys()):
+            self.warnings[i] = 'High cardinality'
 
         cat_columns = self.reduced_data_sample.columns[self.reduced_data_sample.dtypes == "object"]
 
@@ -132,8 +139,6 @@ class DatasetProfiler:
         for i in self.ordinal_columns.keys():
             for j in self.ordinal_columns[i].keys():
                 self.reduced_data_sample[i] = self.reduced_data_sample[i].replace(j, self.ordinal_columns[i][j])
-
-            self.precision[i] = 'int8'
 
         samples = np.random.choice(self.reduced_data_sample.shape[0], min(self.n_samples,
                                                                           self.reduced_data_sample.shape[0]))
@@ -144,6 +149,7 @@ class DatasetProfiler:
 
         self.deterministic_columns_binary, num_cols = find_deterministic_columns_binary(self.reduced_data_sample,
                                                                                         column_search)
+
         to_drop = [i[0] for i in self.deterministic_columns_binary]
         self.reduced_data_sample = self.reduced_data_sample.drop(to_drop, axis=1)
         self.deterministic_columns_regression, num_cols = find_deterministic_columns_regression(
@@ -156,7 +162,37 @@ class DatasetProfiler:
 
         return
 
-    def feat_selection(self, frac=0.4):
+    def column_profiler(self, data):
+
+        for i in data.columns:
+
+            loc_dict = {'dtype': data[i].dtype, 'nunique': data[i].nunique(),
+                        'na_frac': data[i].isna().sum() / data.shape[0]}
+
+            if data[i].dtype != 'object':
+                loc_dict['non_negative'] = (data[i].fillna(0) >= 0).sum() / data.shape[0] == 1
+                loc_dict['non_positive'] = (data[i].fillna(0) <= 0).sum() / data.shape[0] == 1
+                loc_dict['min'] = data[i].min()
+                loc_dict['max'] = data[i].max()
+                loc_dict['mean'] = data[i].mean()
+                loc_dict['representation'] = check_precision(data[i].sample(n=min(1000, data.shape[0])))
+                if data[i].nunique() > 1:
+                    loc_dict['distribution'] = fit_distributions(data[i].sample(n=min(1000, data.shape[0])))
+                else:
+                    loc_dict['distribution'] = 'unique value'
+            else:
+                loc_dict['most_frequent'] = [data[i].value_counts().keys()[0], data[i].value_counts()[0]]
+                loc_dict['least_frequent'] = [data[i].value_counts().keys()[-1], data[i].value_counts()[-1]]
+                if loc_dict['nunique'] == 2:
+                    loc_dict['distribution'] = 'Bernoulli'
+                else:
+                    loc_dict['distribution'] = 'Categorical'
+
+            self.column_profiles[i] = loc_dict
+
+        return
+
+    def feat_selection(self, frac=0.1):
 
         K = int(frac * self.reduced_data_sample.shape[1])
         num_cols = [i for i in self.reduced_data_sample.columns if self.reduced_data_sample[i].dtype != object]
