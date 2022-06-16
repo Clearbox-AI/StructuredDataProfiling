@@ -4,9 +4,9 @@ import pandas as pd
 import dateparser
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
-from structured_data_profiling import check_cardinality
 import copy
 import pickle
+from structured_data_profiling.data_tests import *
 
 
 class DatasetProfiler:
@@ -117,15 +117,13 @@ class DatasetProfiler:
         self.column_profiles = {}
 
         self.high_cardinality = high_cardinality
-        self.too_much_info = rare_labels
+        self.rare_labels = rare_labels
         self.unique_value = unique
+
+        self.column_profiles = column_profiles(self.reduced_data_sample)
 
         self.reduced_data_sample = self.reduced_data_sample.drop(list(unique.keys()), axis=1)
         self.reduced_data_sample = self.reduced_data_sample.drop(list(high_cardinality.keys()), axis=1)
-
-        self.precision = check_precision(self.reduced_data_sample, tol=tol)
-
-        self.column_profiles = column_profiles(self.reduced_data_sample)
 
         cat_columns = self.reduced_data_sample.columns[self.reduced_data_sample.dtypes == "object"]
 
@@ -149,7 +147,7 @@ class DatasetProfiler:
         to_drop = [i[0] for i in self.deterministic_columns_binary]
         self.reduced_data_sample = self.reduced_data_sample.drop(to_drop, axis=1)
         self.deterministic_columns_regression, num_cols = find_deterministic_columns_regression(
-            self.reduced_data_sample, column_search)
+            self.reduced_data_sample)
         to_drop = [i[0] for i in self.deterministic_columns_regression]
         self.reduced_data_sample = self.reduced_data_sample.drop(to_drop, axis=1)
 

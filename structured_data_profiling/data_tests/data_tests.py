@@ -1,18 +1,9 @@
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.linear_model import LinearRegression, Lasso
-import numpy as np
+from sklearn.linear_model import LinearRegression
 import copy
 import re
-import pandas as pd
 from collections import defaultdict
-from functools import reduce
 import dateparser
-import pickle
-from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import mutual_info_classif
-import abc
-import os
-from typing import List
 import numpy as np
 import pandas as pd
 import scipy.stats as ss
@@ -21,22 +12,66 @@ import datetime
 from distfit import distfit
 
 
+def fit_distributions(x: pd.Series):
+
+    if 10 > x.nunique() > 1:
+        dist = distfit(method='discrete')
+        dist.fit_transform(x.fillna(0), verbose=False)
+        out = ([dist.model['name'], dist.model['score']])
+    elif x.nunique() >= 10:
+        dist = distfit()
+        dist.fit_transform(x.fillna(0), verbose=False)
+        out = ([dist.model['name'], dist.model['score']])
+
+    return out
+
+
+def check_precision(x, tol=1e-8):
+
+    types = ['int16', 'int32', 'float16', 'float32']
+    l1 = (x.fillna(0).astype(np.int16) - x.fillna(0)).mean()
+    l2 = (x.fillna(0).astype(np.int32) - x.fillna(0)).mean()
+    l3 = (x.fillna(0).astype(np.float16) - x.fillna(0)).mean()
+    l4 = (x.fillna(0).astype(np.float32) - x.fillna(0)).mean()
+
+    residuals = np.abs([l1, l2, l3, l4]) < tol
+    if residuals.sum() > 0:
+        val = next((index for index, value in enumerate(residuals) if value != 0), None)
+        prec = types[val]
+    else:
+        prec = 'float64'
+
+    return prec
+
+
 def column_profiles(data):
 
+    col_dict = {}
+
     for i in data.columns:
-        loc_dict = {}
-        loc_dict['dtype'] = data[i].dtype
-        loc_dict['nunique'] = data[i].nunique()
-        loc_dict['na_frac'] = data[i].isna().sum() / data.shape[0]
+
+        loc_dict = {'dtype': data[i].dtype, 'nunique': data[i].nunique(),
+                    'na_frac': data[i].isna().sum() / data.shape[0]}
 
         if data[i].dtype != 'object':
             loc_dict['non_negative'] = (data[i].fillna(0) >= 0).sum() / data.shape[0] == 1
             loc_dict['non_positive'] = (data[i].fillna(0) <= 0).sum() / data.shape[0] == 1
+            loc_dict['min'] = data[i].min()
+            loc_dict['max'] = data[i].max()
+            loc_dict['mean'] = data[i].mean()
+            loc_dict['representation'] = check_precision(data[i].sample(n=min(1000, data.shape[0])))
+            loc_dict['distribution'] = fit_distributions(data[i].sample(n=min(1000, data.shape[0])))
         else:
-            loc_dict['non_negative'] = 'NA'
-            loc_dict['non_positive'] = 'NA'
+            loc_dict['most_frequent'] = [data[i].value_counts().keys()[0], data[i].value_counts()[0]]
+            loc_dict['least_frequent'] = [data[i].value_counts().keys()[-1], data[i].value_counts()[-1]]
+            if loc_dict['nunique'] == 2:
+                loc_dict['distribution'] = 'Bernoulli'
+            else:
+                loc_dict['distribution'] = 'Categorical'
 
-        return loc_dict
+        col_dict[i] = loc_dict
+
+    return col_dict
 
 
 def check_cardinality(data, threshold=0.005, frac=0.5):
@@ -83,23 +118,6 @@ def check_cardinality(data, threshold=0.005, frac=0.5):
     return unique, binary, id_column, high_cardinality, too_much_info
 
 
-def check_precision(df, tol=1e-8):
-    num_columns = df.columns[df.dtypes != 'object']
-    new_types = {}
-    types = ['int16', 'int32', 'float16', 'float32']
-    for i in num_columns:
-        l1 = (df[i].fillna(0).astype(np.int16) - df[i].fillna(0)).mean()
-        l2 = (df[i].fillna(0).astype(np.int32) - df[i].fillna(0)).mean()
-        l3 = (df[i].fillna(0).astype(np.float16) - df[i].fillna(0)).mean()
-        l4 = (df[i].fillna(0).astype(np.float32) - df[i].fillna(0)).mean()
-        residuals = np.abs([l1.sum(), l2.sum(), l3.sum(), l4.sum()]) < tol
-        if residuals.sum() > 0:
-            val = next((index for index, value in enumerate(residuals) if value != 0), None)
-            new_types[i] = types[val]
-
-    return new_types
-
-
 def find_deterministic_columns_binary(df, binary):
     jtr = np.random.choice(np.arange(df.shape[0]), 5000, replace=False)
     jts = np.random.choice(np.arange(df.shape[0]), 2000, replace=False)
@@ -116,7 +134,7 @@ def find_deterministic_columns_binary(df, binary):
 
 
 def find_deterministic_columns_regression(df):
-    jtr = np.random.choice(np.arange(df.shape[0]), 1000, replace=False)
+    jtr = np.random.choice(np.arange(df.shape[0]), 1000, replace=False) #TOFIX
     jts = np.random.choice(np.arange(df.shape[0]), 100, replace=False)
 
     deterministic_num = []
@@ -195,14 +213,14 @@ def identify_dates(data):
                 possible_dates.append(i)
 
     possible_dates = possible_dates + timestamp + timestamp_ms
-    return possible_dates
+    return possible_dates, timestamp, timestamp_ms
 
 
 def identify_redundant_dates(data, samples_per_dataframe=40, region='EU'):
     data2 = copy.deepcopy(data)
 
     idx = np.random.choice(np.arange(data2.shape[0]), samples_per_dataframe, replace=False)
-
+    possible_dates, timestamp, timestamp_ms = identify_dates(data2)
     date_dependency = defaultdict(list)
     for i in possible_dates:
         for j in possible_dates:
@@ -315,17 +333,4 @@ def check_label_correlation(Xproc, cat_cols, p_tr = 0.9, n_min=100):
     return corr
 
 
-def fit_distributions(x: pd.DataFrame):
-    out = []
-    cols = x.columns[x.dtypes != 'object']
-    for i in cols:
-        if 10 > x[i].nunique() > 1:
-            dist = distfit(method='discrete')
-            dist.fit_transform(x[i].fillna(0), verbose=False)
-            out.append([i, dist.model['name'], dist.model['score']])
-        elif x[i].nunique() >= 10:
-            dist = distfit()
-            dist.fit_transform(x[i].fillna(0), verbose=False)
-            out.append([i, dist.model['name'], dist.model['score']])
 
-    return out
