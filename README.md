@@ -23,11 +23,11 @@ You can install StructuredDataProfiling by using the pip package manager:
 # Quickstart
 You can import the profiler using
 ```python
-from stucured_data_profiling import DataProfiler
+from structured_data_profiling import DatasetProfiler
 ```
 You can import the profiler using
 ```python
-profiler = DataProfiler('./csv_path.csv')
+profiler = DatasetProfiler('./csv_path.csv')
 ```
 To start the profiling scripts run the method profile()
 ```python
