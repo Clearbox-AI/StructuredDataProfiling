@@ -20,8 +20,9 @@ class DatasetProfiler:
                  regression: bool = False):
 
         df = pd.read_csv(df_path)
+        self.path = df_path
 
-        if (primary_key is not None):
+        if primary_key is not None:
             self.id_columns = primary_key
         else:
             self.id_columns = None
@@ -71,13 +72,13 @@ class DatasetProfiler:
                 # for i in range(len(dfs)):
                 #     dfs[i].index = dfs[i][primary_key]
                 #     dfs[i] = dfs[i].loc[IDS]
-                self.data = [] #dfs
+                self.data = []  # dfs
             else:
                 # dfs = []
                 # for i in sorted_seq:
                 #     dfs.append(df[df[sequence_index] == i])
 
-                self.data = [] #dfs
+                self.data = []  # dfs
                 self.complete_ids = None
 
         else:
@@ -186,6 +187,7 @@ class DatasetProfiler:
                 loc_dict['min'] = data[i].min()
                 loc_dict['max'] = data[i].max()
                 loc_dict['mean'] = data[i].mean()
+                loc_dict['std'] = data[i].std()
                 loc_dict['representation'] = check_precision(data[i].sample(n=min(1000, data.shape[0])))
                 if data[i].nunique() > 1:
                     loc_dict['distribution'] = fit_distributions(data[i].sample(n=min(1000, data.shape[0])))
@@ -275,8 +277,8 @@ class DatasetProfiler:
         print([i for i in self.column_profiles if self.column_profiles[i]['na_frac'] > 0.99])
         print('\n')
 
-        non_neg = [i for i in num_cols if self.column_profiles[i]['non_negative'] == True]
-        non_pos = [i for i in num_cols if self.column_profiles[i]['non_positive'] == True]
+        non_neg = [i for i in num_cols if self.column_profiles[i]['non_negative'] is True]
+        non_pos = [i for i in num_cols if self.column_profiles[i]['non_positive'] is True]
         print('The following columns are non negative')
         print('\n')
         print(non_neg)
@@ -287,6 +289,18 @@ class DatasetProfiler:
 
         return
 
+    def generate_expectations(self):
+        try:
+            import great_expectations as ge
+            data_context = ge.data_context.DataContext()
+            suite = data_context.create_expectation_suite('local_suite', overwrite_existing=True)
+            batch = ge.dataset.PandasDataset(self.data_sample, expectation_suite=suite)
+            suite = batch.get_expectation_suite()
+            data_context.save_expectation_suite(suite)
+            return suite
+        except:
+            raise 'great_expectations is not installed or locally initialised'
+
     def save(self, name: str):
 
         for j, i in enumerate(self.data):
@@ -294,5 +308,3 @@ class DatasetProfiler:
 
         with open(name, 'wb') as f:
             pickle.dump(self, f)
-
-
