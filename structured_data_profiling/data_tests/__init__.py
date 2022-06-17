@@ -11,4 +11,5 @@ __all__ = [
     "identify_redundant_dates",
     "fit_distributions",
     "get_features_correlation",
+    "get_label_correlation",
 ]

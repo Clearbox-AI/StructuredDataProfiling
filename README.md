@@ -39,9 +39,9 @@ profiler.info()
 ```
 # Profiling outputs
 The profiler generates 3 json files describing the ingested dataset. These json files contain information about:
-- Column profiles:
-- Data quality:
-- Data tests:
+- Column profiles: it contains the statistical characterisation of the dataset columns. 
+- Data quality: it highlights issues and limitations affecting the dataset.
+- Data tests: it contains the data tests found by the profiler.
 
 # Examples
 You can find a couple of notebook examples in the [examples](./examples) folder.

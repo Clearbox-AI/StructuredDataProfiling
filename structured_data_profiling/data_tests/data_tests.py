@@ -144,6 +144,7 @@ def find_ordinal_columns(df, cat_columns):
 
     return ordinal_dicts
 
+
 def identify_dates(data):
     data2 = copy.deepcopy(data)
     possible_dates = []
@@ -289,7 +290,7 @@ def get_features_correlation(X):
     return features_correlation
 
 
-def get_label_correlation(Xproc, cat_cols, p_tr=0.99, n_min=100):
+def get_label_correlation(Xproc, cat_cols, p_tr=0.75, n_min=100):
     list2d = list(cat_cols.values())
     merged = list(itertools.chain(*list2d))
     corr = []
@@ -303,7 +304,7 @@ def get_label_correlation(Xproc, cat_cols, p_tr=0.99, n_min=100):
             p2 = Xproc[i].iloc[sample2].sum() / d
             delta = p-p2
             if p > p_tr and i != j and d > n_min and delta > 0.05:
-                corr.append((i, j, p))
+                corr.append((i, j, p, d/Xproc.shape[0]))
 
     anomalies = []
     for i in corr:

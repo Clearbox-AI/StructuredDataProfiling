@@ -7,16 +7,19 @@ from sklearn.feature_selection import mutual_info_classif, mutual_info_regressio
 import copy
 import pickle
 from structured_data_profiling.data_tests import *
+from structured_data_profiling import Preprocessor
 
 
 class DatasetProfiler:
     def __init__(self,
-                 df: pd.DataFrame,
+                 df_path: str,
                  primary_key: str = None,
                  sequence_index: str = None,
                  target: str = None,
                  n_samples: int = 10000,
                  regression: bool = False):
+
+        df = pd.read_csv(df_path)
 
         if (primary_key is not None):
             self.id_columns = primary_key
@@ -105,10 +108,13 @@ class DatasetProfiler:
         self.unique_value = None
         self.column_profiles = None
         self.high_cardinality = None
-        self.too_much_info = None
+        self.rare_labels = None
         self.feature_selection = None
         self.n_samples = n_samples
         self.warnings = None
+        self.correlations = None
+        self.bivariate_tests = None
+        self.anomalies = None
 
         return
 
@@ -121,6 +127,9 @@ class DatasetProfiler:
         self.high_cardinality = high_cardinality
         self.rare_labels = rare_labels
         self.unique_value = unique
+        prepro = Preprocessor(self.reduced_data_sample)
+        xp = prepro.transform(self.reduced_data_sample)
+        self.bivariate_tests, self.anomalies = get_label_correlation(xp, prepro.cat_cols)
 
         self.column_profiler(self.reduced_data_sample)
 
@@ -131,6 +140,8 @@ class DatasetProfiler:
         self.reduced_data_sample = self.reduced_data_sample.drop(list(high_cardinality.keys()), axis=1)
         for i in list(high_cardinality.keys()):
             self.warnings[i] = 'High cardinality'
+
+        self.correlations = get_features_correlation(self.reduced_data_sample)
 
         cat_columns = self.reduced_data_sample.columns[self.reduced_data_sample.dtypes == "object"]
 
@@ -194,6 +205,9 @@ class DatasetProfiler:
 
     def feat_selection(self, frac=0.1):
 
+        if self.target is None:
+            print('no target column specified')
+            return
         K = int(frac * self.reduced_data_sample.shape[1])
         num_cols = [i for i in self.reduced_data_sample.columns if self.reduced_data_sample[i].dtype != object]
         cat_cols = [i for i in self.reduced_data_sample.columns if self.reduced_data_sample[i].dtype == object]
