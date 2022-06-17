@@ -130,7 +130,7 @@ class DatasetProfiler:
         self.unique_value = unique
         prepro = Preprocessor(self.reduced_data_sample)
         xp = prepro.transform(self.reduced_data_sample)
-        self.bivariate_tests, self.anomalies = get_label_correlation(xp, prepro.cat_cols)
+        self.bivariate_tests = get_label_correlation(xp, prepro.cat_cols)
 
         self.column_profiler(self.reduced_data_sample)
 
