@@ -7,7 +7,8 @@ from sklearn.feature_selection import mutual_info_classif, mutual_info_regressio
 import copy
 import pickle
 from structured_data_profiling.data_tests import *
-from structured_data_profiling import Preprocessor
+from structured_data_profiling.preprocessor import Preprocessor
+from structured_data_profiling.expectations import *
 
 
 class DatasetProfiler:
@@ -116,6 +117,7 @@ class DatasetProfiler:
         self.correlations = None
         self.bivariate_tests = None
         self.anomalies = None
+        self.prepro = None
 
         return
 
@@ -128,9 +130,9 @@ class DatasetProfiler:
         self.high_cardinality = high_cardinality
         self.rare_labels = rare_labels
         self.unique_value = unique
-        prepro = Preprocessor(self.reduced_data_sample)
-        xp = prepro.transform(self.reduced_data_sample)
-        self.bivariate_tests = get_label_correlation(xp, prepro.cat_cols)
+        self.prepro = Preprocessor(self.reduced_data_sample)
+        xp = self.prepro.transform(self.reduced_data_sample)
+        self.bivariate_tests, self.anomalies = get_label_correlation(xp, self.prepro.cat_cols)
 
         self.column_profiler(self.reduced_data_sample)
 
@@ -182,6 +184,7 @@ class DatasetProfiler:
                         'na_frac': data[i].isna().sum() / data.shape[0]}
 
             if data[i].dtype != 'object':
+                loc_dict['col_type'] = 'numerical'
                 loc_dict['non_negative'] = (data[i].fillna(0) >= 0).sum() / data.shape[0] == 1
                 loc_dict['non_positive'] = (data[i].fillna(0) <= 0).sum() / data.shape[0] == 1
                 loc_dict['min'] = data[i].min()
@@ -194,6 +197,7 @@ class DatasetProfiler:
                 else:
                     loc_dict['distribution'] = 'unique value'
             else:
+                loc_dict['col_type'] = 'categorical'
                 loc_dict['most_frequent'] = [data[i].value_counts().keys()[0], data[i].value_counts()[0]]
                 loc_dict['least_frequent'] = [data[i].value_counts().keys()[-1], data[i].value_counts()[-1]]
                 if loc_dict['nunique'] == 2:
@@ -289,14 +293,20 @@ class DatasetProfiler:
 
         return
 
-    def generate_expectations(self):
+    def generate_expectations(self, docs=True):
         try:
             import great_expectations as ge
             data_context = ge.data_context.DataContext()
             suite = data_context.create_expectation_suite('local_suite', overwrite_existing=True)
             batch = ge.dataset.PandasDataset(self.data_sample, expectation_suite=suite)
+
+            batch = add_column_expectations(batch, self.column_profiles)
+            batch = add_conditional_expectations(batch, self.bivariate_tests, self.prepro)
+
             suite = batch.get_expectation_suite()
             data_context.save_expectation_suite(suite)
+            if docs is True:
+                data_context.build_data_docs()
             return suite
         except:
             raise 'great_expectations is not installed or locally initialised'
