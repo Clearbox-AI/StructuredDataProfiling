@@ -17,14 +17,14 @@ StructuredDataProfiling runs a series of tests aimed at identifying statistics, 
 For an overview of the library outputs please check the examples section.
 
 # Installation
-You can install StructuredDataProfiling by using the pip package manager:
-`pip install -U structured-profiling
+You can install StructuredDataProfiling by using pip:
+`pip install structured-profiling
 `
 # Quickstart
 You can import the profiler using
 
 ```python
-from src.structured_data_profiling import DatasetProfiler
+from src.structured_data_profiling.profiler import DatasetProfiler
 ```
 You can import the profiler using
 ```python
@@ -34,10 +34,14 @@ To start the profiling scripts run the method profile()
 ```python
 profiler.profile()
 ```
-The method info() outputs the results of the profiling process
+The method generate_expectations() outputs the results of the profiling process converted into data expectations
 ```python
-profiler.info()
+profiler.generate_expectations()
 ```
+The expectations are generated as a JSON using the great_expectation format. The method will also create data docs using the rendered provided by the great_expectations library. 
+
+These docs can be found in the local folder ```great_expectations/uncommitted/data_docs```.
+
 # Profiling outputs
 The profiler generates 3 json files describing the ingested dataset. These json files contain information about:
 - Column profiles: it contains the statistical characterisation of the dataset columns. 
@@ -47,8 +51,10 @@ The profiler generates 3 json files describing the ingested dataset. These json 
 # Examples
 You can find a couple of notebook examples in the [examples](./examples) folder.
 # To-dos
+Disclaimer: this library is still very early stage. Among other things, we still need to:
+
 - [ ] Support more data formats (Feather, Parquet)
 - [ ] Add more Expectations
 - [ ] Integrate PII identification using Presidio
-- [ ] Compile part of the profiling routines using Cython 
+- [ ] Optimise and compile part of the profiling routines using Cython 
 - [ ] Write library tests

@@ -1,4 +1,5 @@
 from functools import reduce
+import great_expectations as ge
 import numpy as np
 import pandas as pd
 import dateparser
@@ -113,17 +114,20 @@ class DatasetProfiler:
         self.rare_labels = None
         self.feature_selection = None
         self.n_samples = n_samples
-        self.warnings = None
         self.correlations = None
         self.bivariate_tests = None
         self.anomalies = None
         self.prepro = None
+        self.duplicates_percentage = None
 
         return
 
     def profile(self, tol: float = 1e-6):
 
         unique, binary, id_column, high_cardinality, rare_labels = check_cardinality(self.reduced_data_sample)
+        self.duplicates_percentage = self.reduced_data_sample[self.reduced_data_sample.duplicated() is True].shape[0] \
+                                     / self.reduced_data_sample.shape[0] * 100
+
         self.column_profiles = {}
         self.warnings = {}
 
@@ -132,17 +136,33 @@ class DatasetProfiler:
         self.unique_value = unique
         self.prepro = Preprocessor(self.reduced_data_sample)
         xp = self.prepro.transform(self.reduced_data_sample)
-        self.bivariate_tests, self.anomalies = get_label_correlation(xp, self.prepro.cat_cols)
+        self.bivariate_tests, self.anomalies = get_label_correlation(xp, self.prepro.cat_cols, p_tr=0.66, delta_tr=0.05)
 
         self.column_profiler(self.reduced_data_sample)
 
+        num_cols = [i for i in self.column_profiles if self.column_profiles[i]['dtype'] != object]
+        cat_cols = [i for i in self.column_profiles if self.column_profiles[i]['dtype'] == object]
+        print('Found ' + str(len(num_cols)) + ' numerical columns.')
+        print('\n')
+        print('Found ' + str(len(cat_cols)) + ' categorical columns.')
+        print('\n')
+
+        non_neg = [i for i in num_cols if self.column_profiles[i]['non_negative'] is True]
+        non_pos = [i for i in num_cols if self.column_profiles[i]['non_positive'] is True]
+
+        if len(non_neg) > 0:
+            print('The following columns are non negative')
+            print('\n')
+            print(non_neg)
+            print('\n')
+        if len(non_pos) > 0:
+            print('The following columns are non positive')
+            print('\n')
+            print(non_pos)
+
         self.reduced_data_sample = self.reduced_data_sample.drop(list(unique.keys()), axis=1)
-        for i in list(unique.keys()):
-            self.warnings[i] = 'Unique value'
 
         self.reduced_data_sample = self.reduced_data_sample.drop(list(high_cardinality.keys()), axis=1)
-        for i in list(high_cardinality.keys()):
-            self.warnings[i] = 'High cardinality'
 
         self.correlations = get_features_correlation(self.reduced_data_sample)
 
@@ -239,80 +259,76 @@ class DatasetProfiler:
 
         return
 
-    def info(self):
+    def warnings(self):
 
-        num_cols = [i for i in self.column_profiles if self.column_profiles[i]['dtype'] != object]
-        cat_cols = [i for i in self.column_profiles if self.column_profiles[i]['dtype'] == object]
-
-        print('Found ' + str(len(num_cols)) + ' numerical columns.')
-        print('\n')
-        print('Found ' + str(len(cat_cols)) + ' categorical columns.')
-        print('\n')
-
-        print('The following columns have been converted from categorical to numerical:')
-        print('\n')
-
-        for i in self.ordinal_columns:
-            print(i, self.ordinal_columns[i])
+        if self.duplicates_percentage > 1.:
+            print(str(len(self.duplicates_percentage)) + ' % of the row has at least one duplicate.')
             print('\n')
 
+        high_corr = (self.correlations.values-np.eye(self.correlations.shape[0]) > 0.9).sum()
+        if high_corr > 0:
+            print(str(high_corr/2) + ' columns are highly correlated (>90%)')
+            print('\n')
+
+        if self.ordinal_columns is not None:
+            print('The following columns might be categorical/ordinal:')
+            print('\n')
+
+            for i in self.ordinal_columns:
+                print(i, self.ordinal_columns[i])
+                print('\n')
+
         l = [i for i in self.unique_value]
-        print('Found ' + str(len(l)) + ' columns containing a unique value')
-        print('\n')
-        print(l)
-        print('\n')
+        if len(l) > 0:
+            print('Found ' + str(len(l)) + ' columns containing a unique value')
+            print('\n')
+            print(l)
+            print('\n')
 
         l = [i[0] for i in self.deterministic_columns_regression]
-        print('Found ' + str(len(l)) + ' deterministic numerical columns. ')
-        print('\n')
-        print(l)
-        print('\n')
+        if len(l) > 0:
+            print('Found ' + str(len(l)) + ' deterministic numerical columns. ')
+            print('\n')
+            print(l)
+            print('\n')
 
         l = [i[0] for i in self.deterministic_columns_binary]
-        print('Found ' + str(len(l)) + ' deterministic binary columns. ')
-        print('\n')
-        print(l)
-        print('\n')
+        if len(l) > 0:
+            print('Found ' + str(len(l)) + ' deterministic binary columns. ')
+            print('\n')
+            print(l)
+            print('\n')
 
-        print('Warning, the following columns contain more than 75% of missing values:\n')
-        print('\n')
-        print([i for i in self.column_profiles if self.column_profiles[i]['na_frac'] > 0.75])
-        print('\n')
+        l = [i for i in self.column_profiles if self.column_profiles[i]['na_frac'] > 0.75]
+        if len(l) > 0:
+            print('Warning, the following columns contain more than 75% of missing values:\n')
+            print('\n')
+            print(l)
+            print('\n')
 
-        print('Warning, the following columns contain more than 99% of missing values:\n')
-        print('\n')
-        print([i for i in self.column_profiles if self.column_profiles[i]['na_frac'] > 0.99])
-        print('\n')
-
-        non_neg = [i for i in num_cols if self.column_profiles[i]['non_negative'] is True]
-        non_pos = [i for i in num_cols if self.column_profiles[i]['non_positive'] is True]
-        print('The following columns are non negative')
-        print('\n')
-        print(non_neg)
-        print('\n')
-        print('The following columns are non positive')
-        print('\n')
-        print(non_pos)
+        l = [i for i in self.column_profiles if self.column_profiles[i]['na_frac'] > 0.99]
+        if len(l) > 0:
+            print('Warning, the following columns contain more than 99% of missing values:\n')
+            print('\n')
+            print(l)
+            print('\n')
 
         return
 
     def generate_expectations(self, docs=True):
-        try:
-            import great_expectations as ge
-            data_context = ge.data_context.DataContext()
-            suite = data_context.create_expectation_suite('local_suite', overwrite_existing=True)
-            batch = ge.dataset.PandasDataset(self.data_sample, expectation_suite=suite)
 
-            batch = add_column_expectations(batch, self.column_profiles)
-            batch = add_conditional_expectations(batch, self.bivariate_tests, self.prepro)
+        data_context = ge.data_context.DataContext()
+        suite = data_context.create_expectation_suite('local_suite', overwrite_existing=True)
+        batch = ge.dataset.PandasDataset(self.data_sample, expectation_suite=suite)
 
-            suite = batch.get_expectation_suite()
-            data_context.save_expectation_suite(suite)
-            if docs is True:
-                data_context.build_data_docs()
-            return suite
-        except:
-            raise 'great_expectations is not installed or locally initialised'
+        batch = add_column_expectations(batch, self.column_profiles)
+        batch = add_conditional_expectations(batch, self.bivariate_tests, self.prepro)
+
+        suite = batch.get_expectation_suite()
+        data_context.save_expectation_suite(suite)
+        if docs is True:
+            data_context.build_data_docs()
+        return suite
 
     def save(self, name: str):
 

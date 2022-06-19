@@ -189,81 +189,6 @@ def identify_dates(data):
     return possible_dates, timestamp, timestamp_ms
 
 
-def identify_redundant_dates(data, samples_per_dataframe=40, region='EU'):
-    data2 = copy.deepcopy(data)
-
-    idx = np.random.choice(np.arange(data2.shape[0]), samples_per_dataframe, replace=False)
-    possible_dates, timestamp, timestamp_ms = identify_dates(data2)
-    date_dependency = defaultdict(list)
-    for i in possible_dates:
-        for j in possible_dates:
-
-            y = data2[j].iloc[idx]
-            if not i in [timestamp, timestamp_ms]:
-
-                x = [dateparser.parse(str(data2[i].iloc[w]), region=region) for w in idx]
-
-                x = [w.timestamp() for w in x if w is not None]
-            else:
-                x = data2[i].iloc[idx].values
-
-            #         date_i = datetime.fromtimestamp(data2[timestamp].iloc[0])
-            row_is_dependent = []
-            # print(x,y.values)
-            if (len(x) == len(y)) and (i != j):
-                dates = [datetime.fromtimestamp(w) for w in x]
-                for w, y_i in zip(dates, y):
-                    date_equivalent = [
-                        w.strftime("%Y-%m-%d"),
-                        w.strftime("%Y/%m/%d"),
-                        w.strftime("%Y-%d-%m"),
-                        w.strftime("%Y/%d/%m"),
-                        w.strftime("%m-%d-%Y"),
-                        w.strftime("%m/%d/%Y"),
-                        w.strftime("%d-%m-%Y"),
-                        w.strftime("%d/%m/%Y"),
-                        w.strftime("%d-%m-%Y 00:00"),
-                        w.strftime("%d/%m/%Y 00:00"),
-                        w.strftime("%d-%m-%Y %H:%M"),
-                        w.strftime("%d/%m/%Y %H:%M"),
-                        w.hour,
-                        w.day,
-                        w.month,
-                        int((w.month - 1) / 3) + 1,
-                        w.year,
-                        w.weekday(),
-                        w.weekday(),
-                        # w.quarter,
-                        # w.week,
-                        w.strftime("'%y"),
-                        w.strftime("%y"),
-                        w.strftime("%Y"),
-                        w.strftime("%H:00"),
-                        w.strftime("%H:%M"),
-                        w.strftime("%H:%M:%S"),
-                    ]
-
-                    indexes = [i1 for i1, x in enumerate(date_equivalent) if x == y_i]
-                    # print(date_equivalent)
-                    # print(i,j,indexes)
-                    if indexes:
-                        #                            print(i, indexes, date_equivalent[indexes[0]])
-                        row_is_dependent += indexes
-                for conditions in np.unique(row_is_dependent):
-                    row_is_dependent_sub = [x for x in row_is_dependent if x == conditions]
-                    print(i, j, row_is_dependent_sub)
-                    if len(row_is_dependent_sub) > 0:
-                        # print(sum(row_is_dependent_sub)/len(row_is_dependent_sub),row_is_dependent_sub[0])
-                        # print((len(row_is_dependent_sub),samples_per_dataframe))
-                        # print(i,j)
-                        if (sum(row_is_dependent_sub) / len(row_is_dependent_sub) == row_is_dependent_sub[0]) and (
-                                len(row_is_dependent_sub) == samples_per_dataframe):
-                            print(j, i, row_is_dependent_sub)
-                            date_dependency[j, i] = (i, row_is_dependent_sub[0])
-
-    return date_dependency, possible_dates, timestamp + timestamp_ms
-
-
 def get_features_correlation(X):
     def _cramers_corrected_stat(confusion_matrix):
         """
@@ -292,7 +217,7 @@ def get_features_correlation(X):
     return features_correlation
 
 
-def get_label_correlation(Xproc, cat_cols, p_tr=0.75, n_min=100):
+def get_label_correlation(Xproc, cat_cols, p_tr=0.75, delta_tr=0.05, anomaly_threshold=0.99, n_min=100):
     list2d = list(cat_cols.values())
     merged = list(itertools.chain(*list2d))
     corr = []
@@ -305,13 +230,13 @@ def get_label_correlation(Xproc, cat_cols, p_tr=0.75, n_min=100):
             sample2 = np.random.choice(np.arange(mask.sum()), mask.sum(), replace=False)
             p2 = Xproc[i].iloc[sample2].sum() / d
             delta = p-p2
-            if p > p_tr and i != j and d > n_min and delta > 0.05:
+            if p > p_tr and i != j and d > n_min and delta > delta_tr:
                 corr.append((i, j, p, d/Xproc.shape[0]))
 
     anomalies = []
     for i in corr:
         i1 = np.where((Xproc[i[1]] == 1) & (Xproc[i[0]] == 0))[0]
-        if (len(i1) > 0) and (i[2] > 0.99):
+        if (len(i1) > 0) and (i[2] > anomaly_threshold):
             anomalies.append([i[1], i[0], i1])
 
     return corr, anomalies
