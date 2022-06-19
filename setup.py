@@ -18,7 +18,7 @@ requirements = ['dateparser==1.0.0',
 
 setup(
     name="structured-profiling",
-    version="0.0.7.3",
+    version="0.0.8",
     author="Clearbox AI",
     author_email="info@clearbox.ai",
     description="",

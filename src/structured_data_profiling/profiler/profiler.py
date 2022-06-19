@@ -125,11 +125,10 @@ class DatasetProfiler:
     def profile(self, tol: float = 1e-6):
 
         unique, binary, id_column, high_cardinality, rare_labels = check_cardinality(self.reduced_data_sample)
-        self.duplicates_percentage = self.reduced_data_sample[self.reduced_data_sample.duplicated() is True].shape[0] \
+        self.duplicates_percentage = self.reduced_data_sample[self.reduced_data_sample.duplicated() == True].shape[0] \
                                      / self.reduced_data_sample.shape[0] * 100
 
         self.column_profiles = {}
-        self.warnings = {}
 
         self.high_cardinality = high_cardinality
         self.rare_labels = rare_labels
@@ -142,9 +141,7 @@ class DatasetProfiler:
 
         num_cols = [i for i in self.column_profiles if self.column_profiles[i]['dtype'] != object]
         cat_cols = [i for i in self.column_profiles if self.column_profiles[i]['dtype'] == object]
-        print('Found ' + str(len(num_cols)) + ' numerical columns.')
-        print('\n')
-        print('Found ' + str(len(cat_cols)) + ' categorical columns.')
+        print('Found ' + str(len(num_cols)) + ' numerical columns and ' + str(len(cat_cols)) + ' categorical columns.')
         print('\n')
 
         non_neg = [i for i in num_cols if self.column_profiles[i]['non_negative'] is True]
@@ -193,7 +190,7 @@ class DatasetProfiler:
 
         if self.target is not None:
             self.feat_selection()
-
+        print('Profiling finished.')
         return
 
     def column_profiler(self, data):
@@ -262,12 +259,12 @@ class DatasetProfiler:
     def warnings(self):
 
         if self.duplicates_percentage > 1.:
-            print(str(len(self.duplicates_percentage)) + ' % of the row has at least one duplicate.')
+            print(str(self.duplicates_percentage) + ' % of the rows has at least one duplicate.')
             print('\n')
 
-        high_corr = (self.correlations.values-np.eye(self.correlations.shape[0]) > 0.9).sum()
+        high_corr = (self.correlations.values-np.eye(self.correlations.shape[0]) > 0.8).sum()
         if high_corr > 0:
-            print(str(high_corr/2) + ' columns are highly correlated (>90%)')
+            print(str(high_corr/2) + ' columns are highly correlated (>80%)')
             print('\n')
 
         if self.ordinal_columns is not None:
@@ -283,6 +280,13 @@ class DatasetProfiler:
             print('Found ' + str(len(l)) + ' columns containing a unique value')
             print('\n')
             print(l)
+            print('\n')
+
+        if len(self.rare_labels) > 0:
+            print('The following categorical labels are too rare (frequency<0.005%):')
+            print('\n')
+            for j in self.rare_labels:
+                print(j)
             print('\n')
 
         l = [i[0] for i in self.deterministic_columns_regression]

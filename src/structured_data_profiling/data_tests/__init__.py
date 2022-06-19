@@ -8,7 +8,6 @@ __all__ = [
     "find_deterministic_columns_regression",
     "find_ordinal_columns",
     "identify_dates",
-    "identify_redundant_dates",
     "fit_distributions",
     "get_features_correlation",
     "get_label_correlation",
