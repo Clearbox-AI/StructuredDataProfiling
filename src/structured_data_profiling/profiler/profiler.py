@@ -167,9 +167,9 @@ class DatasetProfiler:
 
         self.ordinal_columns = find_ordinal_columns(self.reduced_data_sample, cat_columns)
 
-        for i in self.ordinal_columns.keys():
-            for j in self.ordinal_columns[i].keys():
-                self.reduced_data_sample[i] = self.reduced_data_sample[i].replace(j, self.ordinal_columns[i][j])
+        # for i in self.ordinal_columns.keys():
+        #     for j in self.ordinal_columns[i].keys():
+        #         self.reduced_data_sample[i] = self.reduced_data_sample[i].replace(j, self.ordinal_columns[i][j])
 
         samples = np.random.choice(self.reduced_data_sample.shape[0], min(self.n_samples,
                                                                           self.reduced_data_sample.shape[0]))
