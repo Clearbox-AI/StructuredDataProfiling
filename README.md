@@ -24,7 +24,7 @@ You can install StructuredDataProfiling by using pip:
 You can import the profiler using
 
 ```python
-from src.structured_data_profiling.profiler import DatasetProfiler
+from structured_data_profiling.profiler import DatasetProfiler
 ```
 You can import the profiler using
 ```python
