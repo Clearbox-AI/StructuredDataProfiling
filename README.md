@@ -34,11 +34,12 @@ To start the profiling scripts run the method profile()
 ```python
 profiler.profile()
 ```
-The method generate_expectations() outputs the results of the profiling process converted into data expectations
+The method generate_expectations() outputs the results of the profiling process converted into data expectations. Please note, the method requires the existence of a local great_expectations project.
+If you haven't done so please run ```great_expectations init``` in your working directory.
 ```python
 profiler.generate_expectations()
 ```
-The expectations are generated as a JSON using the great_expectation format. The method will also create data docs using the rendered provided by the great_expectations library. 
+The expectations are generated in a JSON format using the great_expectation schema. The method will also create data docs using the rendered provided by the great_expectations library. 
 
 These docs can be found in the local folder ```great_expectations/uncommitted/data_docs```.
 
