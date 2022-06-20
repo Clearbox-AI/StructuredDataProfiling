@@ -1,5 +1,4 @@
 from functools import reduce
-import great_expectations as ge
 import numpy as np
 import pandas as pd
 import dateparser
@@ -324,6 +323,7 @@ class DatasetProfiler:
         return
 
     def generate_expectations(self, docs=True):
+        import great_expectations as ge
 
         data_context = ge.data_context.DataContext()
         suite = data_context.create_expectation_suite('local_suite', overwrite_existing=True)
