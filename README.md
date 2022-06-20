@@ -3,7 +3,7 @@
 
 The StructuredDataProfiling is a Python library developed to assess structured datasets and to facilitate the creation of **data tests** through automated data profiling.
 
-The library creates data tests in the form of **Expectations** using the [great_expectation](www.greatexpectations.io) framework. Expectations are 'declarative statements that a computer can evaluate and semantically meaningful to humans'. 
+The library creates data tests in the form of **Expectations** using the [great_expectations](https://www.greatexpectations.io) framework. Expectations are 'declarative statements that a computer can evaluate and semantically meaningful to humans'. 
 
 An expectation could be, for example, 'the sum of columns a and b should be equal to one' or 'the values in column c should be non-negative'.
 
