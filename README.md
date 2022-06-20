@@ -52,7 +52,7 @@ The profiler generates 3 json files describing the ingested dataset. These json 
 # Examples
 You can find a couple of notebook examples in the [examples](./examples) folder.
 # To-dos
-Disclaimer: this library is still very early stage. Among other things, we still need to:
+Disclaimer: this library is still at a very early stage. Among other things, we still need to:
 
 - [ ] Support more data formats (Feather, Parquet)
 - [ ] Add more Expectations
