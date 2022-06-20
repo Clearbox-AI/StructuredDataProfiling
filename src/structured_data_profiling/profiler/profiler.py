@@ -10,6 +10,7 @@ import pickle
 from structured_data_profiling.preprocessor import Preprocessor
 from structured_data_profiling.data_tests import *
 from structured_data_profiling.expectations import *
+from structured_data_profiling.utils import *
 
 
 class DatasetProfiler:
@@ -119,15 +120,18 @@ class DatasetProfiler:
         self.anomalies = None
         self.prepro = None
         self.duplicates_percentage = None
+        self.possible_dates = None
 
         return
 
     def profile(self, tol: float = 1e-6):
 
+        self.possible_dates = identify_dates(self.reduced_data_sample)
         unique, binary, id_column, high_cardinality, rare_labels = check_cardinality(self.reduced_data_sample)
+
         self.duplicates_percentage = self.reduced_data_sample[self.reduced_data_sample.duplicated() == True].shape[0] \
                                      / self.reduced_data_sample.shape[0] * 100
-
+        self.reduced_data_sample = shrink_labels(self.reduced_data_sample, rare_labels)
         self.column_profiles = {}
 
         self.high_cardinality = high_cardinality
@@ -326,7 +330,7 @@ class DatasetProfiler:
         batch = ge.dataset.PandasDataset(self.data_sample, expectation_suite=suite)
 
         batch = add_column_expectations(batch, self.column_profiles)
-        batch = add_conditional_expectations(batch, self.bivariate_tests, self.prepro)
+        batch = add_conditional_expectations(batch, self.bivariate_tests, self.prepro, self.rare_labels)
 
         suite = batch.get_expectation_suite()
         data_context.save_expectation_suite(suite)

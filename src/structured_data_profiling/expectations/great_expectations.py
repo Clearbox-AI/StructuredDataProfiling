@@ -28,7 +28,11 @@ def add_column_expectations(batch, col_profiles):
     return batch
 
 
-def add_conditional_expectations(batch, test_list, prepro):
+def add_conditional_expectations(batch, test_list, prepro, rare_labels):
+
+    rl_dict = {}
+    for i in rare_labels:
+        rl_dict[i[0]] = list(i[1])
 
     for test in test_list:
 
@@ -40,7 +44,7 @@ def add_conditional_expectations(batch, test_list, prepro):
             parse_arg = feat2+'>'+str(interval[0])+' and '+feat2+'<'+str(interval[1])
         else:
             value2 = test[1].replace(feat2 + '_', '')
-            parse_arg = feat2+'=="'+value2+'"'
+            parse_arg = '`'+feat2+'`=="'+value2+'"'
 
 
         if str(batch[feat1].dtype) != 'object':
@@ -55,7 +59,11 @@ def add_conditional_expectations(batch, test_list, prepro):
             )
         else:
             value1 = test[0].replace(feat1 + '_', '')
-            set1 = [value1]
+            if value1 == 'Grouped_labels':
+                set1 = rl_dict[feat1]
+            else:
+                set1 = [value1]
+
             batch.expect_column_values_to_be_in_set(
                 column=feat1,
                 value_set=set1,

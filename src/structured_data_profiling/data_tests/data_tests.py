@@ -4,11 +4,12 @@ import copy
 import re
 from collections import defaultdict
 import dateparser
+from dateutil import parser
 import numpy as np
 import pandas as pd
 import scipy.stats as ss
 import itertools
-import datetime
+from datetime import datetime
 from distfit import distfit
 
 
@@ -242,3 +243,6 @@ def get_label_correlation(Xproc, cat_cols, p_tr=0.75, delta_tr=0.05, anomaly_thr
     return corr, anomalies
 
 
+def datetime_tests():
+
+    return
