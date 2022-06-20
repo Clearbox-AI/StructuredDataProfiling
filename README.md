@@ -14,7 +14,7 @@ StructuredDataProfiling runs a series of tests aimed at identifying statistics, 
 - Evaluate relationships between attributes (ex. column C is the difference between columns A and B) 
 - Understand ontologies characterizing categorical data (column A contains names, while B contains geographical places).
 
-For an overview of the library outputs please check the examples section.
+For an overview of the library outputs please check the [examples](./examples) section.
 
 # Installation
 You can install StructuredDataProfiling by using pip:
