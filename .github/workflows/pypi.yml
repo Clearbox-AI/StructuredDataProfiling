@@ -18,9 +18,9 @@ jobs:
           run: |
             python setup.py bdist
 
-        - name: Pytest
-          run: |
-            python -m pip install --upgrade pip
-            pip install twine
-            twine upload
+        - name: Publish package
+          uses: pypa/gh-action-pypi-publish@release/v1
+          with:
+            user: __token__
+            password: ${{ secrets.PYPI_TOKEN }}
 
