@@ -30,7 +30,7 @@ def find_sequences(df, sequence_index, primary_key):
                 sorted_seq = seq_idxs.sort()
 
         print('Found following sequence indeces:', sorted_seq)
-
+        complete_ids = []
         if primary_key:
             dfs = []
             ids = []
@@ -39,15 +39,11 @@ def find_sequences(df, sequence_index, primary_key):
                 ids.append(df[primary_key][df[sequence_index] == i])
 
             IDS = reduce(np.intersect1d, (*ids,))
-            complete_ids = IDS
-            # for i in range(len(dfs)):
-            #     dfs[i].index = dfs[i][primary_key]
-            #     dfs[i] = dfs[i].loc[IDS]
+            complete_ids.append(IDS)
         else:
-            # dfs = []
-            # for i in sorted_seq:
-            #     dfs.append(df[df[sequence_index] == i])
-            complete_ids = None
+            complete_ids.append(None)
 
     else:
         complete_ids = None
+
+    return sorted_seq, complete_ids

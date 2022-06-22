@@ -1,4 +1,5 @@
 from .data_tests import *
+from .temporal_test import *
 
 
 __all__ = [
@@ -11,4 +12,5 @@ __all__ = [
     "fit_distributions",
     "get_features_correlation",
     "get_label_correlation",
+    "find_sequences",
 ]

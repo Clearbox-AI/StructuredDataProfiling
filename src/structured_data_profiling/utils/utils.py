@@ -36,4 +36,4 @@ def shrink_labels(reduced_df, too_much_info):
         reduced_df = reduced_df.replace(to_shrink_str, 'Grouped_labels')
         reduced_df = reduced_df.replace(to_shrink_int, -999999)
 
-        return reduced_df
+    return reduced_df

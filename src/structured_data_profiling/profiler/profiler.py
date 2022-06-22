@@ -8,6 +8,8 @@ import copy
 import pickle
 from structured_data_profiling.preprocessor import Preprocessor
 from structured_data_profiling.data_tests import *
+from structured_data_profiling.data_tests import find_sequences
+
 from structured_data_profiling.expectations import *
 from structured_data_profiling.utils import *
 
@@ -36,6 +38,7 @@ class DatasetProfiler:
             self.target = None
             self.regression = False
 
+        sorted_seq, seq_caract = find_sequences(df, sequence_index, primary_key)
         samples = np.random.choice(df.shape[0], min(n_samples, df.shape[0]))
         self.data_sample = df.iloc[samples]
         self.original_shape = df.shape
@@ -79,6 +82,7 @@ class DatasetProfiler:
 
         self.duplicates_percentage = self.reduced_data_sample[self.reduced_data_sample.duplicated() == True].shape[0] \
                                      / self.reduced_data_sample.shape[0] * 100
+
         self.reduced_data_sample = shrink_labels(self.reduced_data_sample, rare_labels)
         self.column_profiles = {}
 
@@ -87,6 +91,7 @@ class DatasetProfiler:
         self.unique_value = unique
         self.prepro = Preprocessor(self.reduced_data_sample)
         xp = self.prepro.transform(self.reduced_data_sample)
+
         self.bivariate_tests, self.anomalies = get_label_correlation(xp, self.prepro.cat_cols, p_tr=0.66, delta_tr=0.05)
 
         self.column_profiler(self.reduced_data_sample)

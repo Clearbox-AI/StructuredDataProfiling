@@ -51,6 +51,8 @@ def check_cardinality(data, threshold=0.005, frac=0.5):
     binary = {}
     id_column = []
     high_cardinality = {}
+    categorical_features = data.columns[data.dtypes == 'object']
+
     for i in data.columns:
         n = data[i].nunique()
         if n <= 1:
@@ -59,12 +61,12 @@ def check_cardinality(data, threshold=0.005, frac=0.5):
             binary[i] = data[i].unique()
         if n == data[i].shape[0]:
             id_column.append(i)
-        elif n > frac*data[i].shape[0]:
+        elif (n > frac*data[i].shape[0]) and (i in categorical_features):
             high_cardinality[i] = data[i]
 
     too_much_info = []
     no_info = []
-    categorical_features = data.columns[data.dtypes == 'object']
+
 
     cat_features_stats = [
         (
