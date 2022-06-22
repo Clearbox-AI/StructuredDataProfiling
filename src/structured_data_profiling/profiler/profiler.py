@@ -36,57 +36,6 @@ class DatasetProfiler:
             self.target = None
             self.regression = False
 
-        sorted_seq = None
-        if (sequence_index is not None):
-            if ((df[sequence_index].isna()).sum() > 0):
-                print('Initialisation failed, sequence_index contains NaNs')
-                return
-            else:
-                seq_idxs = df[sequence_index].unique()
-                seq_tmsp = []
-                for i in seq_idxs:
-                    try:
-                        w = dateparser.parse(str(i), region='EU').timestamp()
-                    except:
-                        w = None
-
-                    seq_tmsp.append(w)
-
-                if None not in seq_tmsp:
-                    zipped_lists = zip(seq_tmsp, seq_idxs)
-                    sorted_zipped_lists = sorted(zipped_lists)
-
-                    sorted_seq = [element for _, element in sorted_zipped_lists]
-                else:
-                    sorted_seq = seq_idxs.sort()
-
-            print('Found following sequence indeces:', sorted_seq)
-
-            if primary_key:
-                dfs = []
-                ids = []
-                for i in sorted_seq:
-                    dfs.append(df[df[sequence_index] == i])
-                    ids.append(df[primary_key][df[sequence_index] == i])
-
-                IDS = reduce(np.intersect1d, (*ids,))
-                self.complete_ids = IDS
-                # for i in range(len(dfs)):
-                #     dfs[i].index = dfs[i][primary_key]
-                #     dfs[i] = dfs[i].loc[IDS]
-                self.data = []  # dfs
-            else:
-                # dfs = []
-                # for i in sorted_seq:
-                #     dfs.append(df[df[sequence_index] == i])
-
-                self.data = []  # dfs
-                self.complete_ids = None
-
-        else:
-            self.data = df
-            self.complete_ids = None
-
         samples = np.random.choice(df.shape[0], min(n_samples, df.shape[0]))
         self.data_sample = df.iloc[samples]
         self.original_shape = df.shape
