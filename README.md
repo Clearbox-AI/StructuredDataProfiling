@@ -46,8 +46,13 @@ These docs can be found in the local folder ```great_expectations/uncommitted/da
 # Profiling outputs
 The profiler generates 3 json files describing the ingested dataset. These json files contain information about:
 - Column profiles: it contains the statistical characterisation of the dataset columns. 
-- Data quality: it highlights issues and limitations affecting the dataset.
-- Data tests: it contains the data tests found by the profiler.
+- Data warnings: it highlights issues and limitations affecting the dataset.
+- Data expectations: it contains the data tests found by the profiler.
+
+The process of generating expectations makes use of the great_expectations library to produce an HTML file contaning data docs. An example of data doc for a given column can be seen in the image below.
+
+<img alt="data docs example 1" src="https://raw.githubusercontent.com/Clearbox-AI/StructuredDataProfiling/main/examples/num_columns.PNG"/>
+
 
 # Examples
 You can find a couple of notebook examples in the [examples](./examples) folder.
