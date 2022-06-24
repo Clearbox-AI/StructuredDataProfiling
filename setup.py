@@ -4,21 +4,21 @@ from setuptools import setup, find_packages
 with open("README.md", "r") as readme:
     long_description = readme.read()
 
-requirements = ['dateparser==1.0.0',
-                'distfit==1.4.0',
-                'great-expectations==0.13.41',
-                'joblib==1.1.0',
-                'numpy==1.22',
-                'pandas==1.4.2',
-                'pytest==5.4.3',
-                'pytest-lazy-fixture==0.6.3',
-                'scikit-learn==1.1.1',
-                'scipy==1.7.2',
-                'twine==4.0.1']
+requirements = ['dateparser>=1.0.0',
+                'distfit>=1.4.0',
+                'great-expectations>=0.13.41',
+                'joblib>=1.1.0',
+                'numpy>=1.22',
+                'pandas>=1.4.2',
+                'pytest>=5.4.3',
+                'pytest-lazy-fixture>=0.6.3',
+                'scikit-learn>=1.1.1',
+                'scipy>=1.7.2',
+                'twine>=4.0.1']
 
 setup(
     name="structured-profiling",
-    version="0.1.3",
+    version="0.1.3.1",
     author="Clearbox AI",
     author_email="info@clearbox.ai",
     description="",
