@@ -219,22 +219,47 @@ def get_features_correlation(X):
 
     return features_correlation
 
+#
+# def get_label_correlation(Xproc, cat_cols, p_tr=0.75, delta_tr=0.05, anomaly_threshold=0.99, n_min=100):
+#     list2d = list(cat_cols.values())
+#     merged = list(itertools.chain(*list2d))
+#     corr = []
+#
+#     for i in merged:
+#         for j in merged:
+#             mask = Xproc[j] == 1
+#             d = Xproc[i][mask].shape[0]
+#             p = Xproc[i][mask].sum() / d
+#             sample2 = np.random.choice(np.arange(d), d, replace=False)
+#             p2 = Xproc[i].iloc[sample2].sum() / d
+#             delta = p-p2
+#             if p > p_tr and i != j and d > n_min and delta > delta_tr:
+#                 corr.append((i, j, p, d/Xproc.shape[0]))
+#
+#     anomalies = []
+#     for i in corr:
+#         i1 = np.where((Xproc[i[1]] == 1) & (Xproc[i[0]] == 0))[0]
+#         if (len(i1) > 0) and (i[2] > anomaly_threshold):
+#             anomalies.append([i[1], i[0], i1])
+#
+#     return corr, anomalies
+
 
 def get_label_correlation(Xproc, cat_cols, p_tr=0.75, delta_tr=0.05, anomaly_threshold=0.99, n_min=100):
     list2d = list(cat_cols.values())
     merged = list(itertools.chain(*list2d))
     corr = []
-
-    for i in merged:
-        for j in merged:
-            mask = Xproc[j] == 1
-            d = Xproc[i][mask].shape[0]
-            p = Xproc[i][mask].sum() / d
-            sample2 = np.random.choice(np.arange(mask.sum()), mask.sum(), replace=False)
-            p2 = Xproc[i].iloc[sample2].sum() / d
+    Xnp = Xproc.values
+    for j in range(len(merged)):
+        Xt = Xnp[Xnp[:, j] == 1]
+        d = Xt.shape[0]
+        sample2 = np.random.choice(np.arange(d), d, replace=False)
+        for i in range(len(merged)):
+            p = Xt[:, i].sum()/d
+            p2 = Xnp[sample2, i][sample2].sum() / d
             delta = p-p2
             if p > p_tr and i != j and d > n_min and delta > delta_tr:
-                corr.append((i, j, p, d/Xproc.shape[0]))
+                corr.append((merged[i], merged[j], p, d/Xproc.shape[0]))
 
     anomalies = []
     for i in corr:
