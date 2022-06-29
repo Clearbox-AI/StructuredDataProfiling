@@ -8,14 +8,14 @@ def find_sequences(df, sequence_index, primary_key):
     sorted_seq = None
     if sequence_index is not None:
         if (df[sequence_index].isna()).sum() > 0:
-            print('Initialisation failed, sequence_index contains NaNs')
+            print("Initialisation failed, sequence_index contains NaNs")
             return
         else:
             seq_idxs = df[sequence_index].unique()
             seq_tmsp = []
             for i in seq_idxs:
                 try:
-                    w = dateparser.parse(str(i), region='EU').timestamp()
+                    w = dateparser.parse(str(i), region="EU").timestamp()
                 except:
                     w = None
 
@@ -29,7 +29,7 @@ def find_sequences(df, sequence_index, primary_key):
             else:
                 sorted_seq = seq_idxs.sort()
 
-        print('Found following sequence indeces:', sorted_seq)
+        print("Found following sequence indeces:", sorted_seq)
         complete_ids = []
         if primary_key:
             dfs = []
