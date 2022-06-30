@@ -26,14 +26,14 @@ def lists_to_dict(a, b):
 
 def shrink_labels(reduced_df, too_much_info):
     if len(too_much_info) > 0:
-        columns_to_shrink_str = [i[0] for i in too_much_info if i[1].dtype == 'object']
-        cats_to_shrink_str = [i[1] for i in too_much_info if i[1].dtype == 'object']
-        columns_to_shrink_int = [i[0] for i in too_much_info if i[1].dtype != 'object']
-        cats_to_shrink_int = [i[1] for i in too_much_info if i[1].dtype != 'object']
+        columns_to_shrink_str = [i[0] for i in too_much_info if i[1].dtype == "object"]
+        cats_to_shrink_str = [i[1] for i in too_much_info if i[1].dtype == "object"]
+        columns_to_shrink_int = [i[0] for i in too_much_info if i[1].dtype != "object"]
+        cats_to_shrink_int = [i[1] for i in too_much_info if i[1].dtype != "object"]
         to_shrink_str = dict(zip(columns_to_shrink_str, cats_to_shrink_str))
         to_shrink_int = dict(zip(columns_to_shrink_int, cats_to_shrink_int))
 
-        reduced_df = reduced_df.replace(to_shrink_str, 'Grouped_labels')
+        reduced_df = reduced_df.replace(to_shrink_str, "Grouped_labels")
         reduced_df = reduced_df.replace(to_shrink_int, -999999)
 
     return reduced_df
