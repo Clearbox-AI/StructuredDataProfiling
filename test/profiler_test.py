@@ -1,11 +1,15 @@
 import pytest
 from structured_data_profiling.profiler import DatasetProfiler
 
+
 @pytest.mark.parametrize(
     "data_path",
     [
-        (pytest.lazy_fixture("lending"), './test/resources/datasets/lending/lending.csv'),
-        (pytest.lazy_fixture("adult"), './test/resources/datasets/adult/uci_adult.csv'),
+        (
+            pytest.lazy_fixture("lending"),
+            "./test/resources/datasets/lending/lending.csv",
+        ),
+        (pytest.lazy_fixture("adult"), "./test/resources/datasets/adult/uci_adult.csv"),
     ],
 )
 def test_import(data_path):
@@ -14,11 +18,15 @@ def test_import(data_path):
     assert dp.reduced_data_sample.shape[0] > 0
     assert dp.reduced_data_sample.shape[1] > 0
 
+
 @pytest.mark.parametrize(
     "data_path",
     [
-        (pytest.lazy_fixture("lending"), './test/resources/datasets/lending/lending.csv'),
-        (pytest.lazy_fixture("adult"), './test/resources/datasets/adult/uci_adult.csv'),
+        (
+            pytest.lazy_fixture("lending"),
+            "./test/resources/datasets/lending/lending.csv",
+        ),
+        (pytest.lazy_fixture("adult"), "./test/resources/datasets/adult/uci_adult.csv"),
     ],
 )
 def test_profile(data_path):

@@ -2,15 +2,6 @@ import pandas as pd
 import copy
 
 
-def drop_nan(x_in):
-    cols = []
-    for i in x_in.columns:
-        if i.split('_')[-1] != 'nan':
-            cols.append(i)
-
-    return x_in[cols]
-
-
 class Preprocessor:
 
     def __init__(self, x: pd.DataFrame, n_bins=5):
@@ -25,8 +16,7 @@ class Preprocessor:
         xproc = pd.DataFrame()
 
         for i in self.num:
-            if x[i].nunique() > 10:
-                x[i] = pd.cut(x[i], bins=min(self.bins, x[i].nunique()), right=False).astype(str)
+            x[i] = pd.cut(x[i], bins=min(self.bins, x[i].nunique()), right=False).astype(str)
 
         for i in self.cat:
             xc = pd.get_dummies(x[i], prefix=i)
@@ -37,4 +27,3 @@ class Preprocessor:
         self.cat_cols = cat_cols
 
         return xproc
-

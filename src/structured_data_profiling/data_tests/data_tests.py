@@ -11,7 +11,6 @@ import scipy.stats as ss
 import itertools
 from datetime import datetime
 from distfit import distfit
-from progressbar import ProgressBar
 
 
 def fit_distributions(x: pd.Series):
@@ -214,9 +213,9 @@ def get_features_correlation(X):
     for feature_i in X.columns:
         for feature_j in X.columns:
             confusion_matrix = pd.crosstab(X[feature_i], X[feature_j])
-            if confusion_matrix.empty is False:
-                features_correlation[feature_i].loc[feature_j] = \
-                    float(round(_cramers_corrected_stat(confusion_matrix), 4))
+
+            features_correlation[feature_i].loc[feature_j] = \
+                float(round(_cramers_corrected_stat(confusion_matrix), 4))
 
     return features_correlation
 
@@ -246,13 +245,12 @@ def get_features_correlation(X):
 #     return corr, anomalies
 
 
-def get_label_correlation(Xproc, p_tr=0.75, delta_tr=0.05, anomaly_threshold=0.99, n_min=100):
-    #list2d = list(cat_cols.values())
-    merged = Xproc.columns#list(itertools.chain(*list2d))
+def get_label_correlation(Xproc, cat_cols, p_tr=0.75, delta_tr=0.05, anomaly_threshold=0.99, n_min=100):
+    list2d = list(cat_cols.values())
+    merged = list(itertools.chain(*list2d))
     corr = []
     Xnp = Xproc.values
-    pbar = ProgressBar()
-    for j in pbar(range(len(merged))):
+    for j in range(len(merged)):
         Xt = Xnp[Xnp[:, j] == 1]
         d = Xt.shape[0]
         sample2 = np.random.choice(np.arange(d), d, replace=False)
