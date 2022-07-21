@@ -3,7 +3,10 @@ import numpy as np
 
 def create_interval(string: str):
     bounds = string.split('_')[-1].replace('[', '').replace(')', '').split(',')
-    return float(bounds[0]), float(bounds[1])
+    if len(bounds) < 2:
+        return bounds[0]
+    else:
+        return float(bounds[0]), float(bounds[1])
 
 
 def add_column_expectations(batch, col_profiles):
@@ -40,22 +43,34 @@ def add_conditional_expectations(batch, test_list, prepro, rare_labels):
 
         if str(batch[feat2].dtype) != 'object':
             interval = create_interval(test[1])
-            parse_arg = feat2+'>'+str(interval[0])+' and '+feat2+'<'+str(interval[1])
+            if len(interval) == 2:
+                parse_arg = feat2+'>'+str(interval[0])+' and '+feat2+'<'+str(interval[1])
+            else:
+                parse_arg = '`'+feat2+'`=="'+interval+'"'
+
         else:
             value2 = test[1].replace(feat2 + '_', '')
             parse_arg = '`'+feat2+'`=="'+value2+'"'
 
-
         if str(batch[feat1].dtype) != 'object':
             interval = create_interval(test[0])
-            batch.expect_column_values_to_be_between(
-                column=feat1,
-                min_value=interval[0],
-                max_value=interval[1],
-                condition_parser='pandas',
-                row_condition=parse_arg,
-                mostly=test[2]
-            )
+            if len(interval) == 2:
+                batch.expect_column_values_to_be_between(
+                    column=feat1,
+                    min_value=interval[0],
+                    max_value=interval[1],
+                    condition_parser='pandas',
+                    row_condition=parse_arg,
+                    mostly=test[2]
+                )
+            else:
+                batch.expect_column_values_to_be_in_set(
+                    column=feat1,
+                    value_set=[interval[0]],
+                    condition_parser='pandas',
+                    row_condition=parse_arg,
+                    mostly=test[2]
+                )
         else:
             value1 = test[0].replace(feat1 + '_', '')
             if value1 == 'Grouped_labels':

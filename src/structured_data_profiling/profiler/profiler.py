@@ -78,6 +78,7 @@ class DatasetProfiler:
     def profile(self, tol: float = 1e-6):
 
         self.possible_dates = identify_dates(self.reduced_data_sample)
+
         unique, binary, id_column, high_cardinality, rare_labels = check_cardinality(self.reduced_data_sample)
 
         self.duplicates_percentage = self.reduced_data_sample[self.reduced_data_sample.duplicated() == True].shape[0] \
@@ -92,12 +93,13 @@ class DatasetProfiler:
         self.prepro = Preprocessor(self.reduced_data_sample)
         xp = self.prepro.transform(self.reduced_data_sample)
 
-        self.bivariate_tests, self.anomalies = get_label_correlation(xp, self.prepro.cat_cols, p_tr=0.66, delta_tr=0.05)
+        self.bivariate_tests, self.anomalies = get_label_correlation(xp, p_tr=0.66, delta_tr=0.05)
 
         self.column_profiler(self.reduced_data_sample)
 
         num_cols = [i for i in self.column_profiles if self.column_profiles[i]['dtype'] != object]
         cat_cols = [i for i in self.column_profiles if self.column_profiles[i]['dtype'] == object]
+
         print('Found ' + str(len(num_cols)) + ' numerical columns and ' + str(len(cat_cols)) + ' categorical columns.')
         print('\n')
 
@@ -118,7 +120,8 @@ class DatasetProfiler:
 
         self.reduced_data_sample = self.reduced_data_sample.drop(list(high_cardinality.keys()), axis=1)
 
-        self.correlations = get_features_correlation(self.reduced_data_sample)
+        if self.reduced_data_sample.shape[1] < 100:
+            self.correlations = get_features_correlation(self.reduced_data_sample)
 
         cat_columns = self.reduced_data_sample.columns[self.reduced_data_sample.dtypes == "object"]
 
