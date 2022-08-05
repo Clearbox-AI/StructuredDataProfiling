@@ -24,16 +24,38 @@ def lists_to_dict(a, b):
     return new_dict, keys
 
 
-def shrink_labels(reduced_df, too_much_info):
-    if len(too_much_info) > 0:
-        columns_to_shrink_str = [i[0] for i in too_much_info if i[1].dtype == "object"]
-        cats_to_shrink_str = [i[1] for i in too_much_info if i[1].dtype == "object"]
-        columns_to_shrink_int = [i[0] for i in too_much_info if i[1].dtype != "object"]
-        cats_to_shrink_int = [i[1] for i in too_much_info if i[1].dtype != "object"]
-        to_shrink_str = dict(zip(columns_to_shrink_str, cats_to_shrink_str))
-        to_shrink_int = dict(zip(columns_to_shrink_int, cats_to_shrink_int))
+def reduce_dataframe(
+    reduced_data_sample,
+    column_profiles,
+    high_cardinality_threshold=0.8,
+):
 
-        reduced_df = reduced_df.replace(to_shrink_str, "Grouped_labels")
-        reduced_df = reduced_df.replace(to_shrink_int, -999999)
+    cat_cols = [
+        i for i in column_profiles.keys() if column_profiles[i]["type"] == "string"
+    ]
+    unique = [
+        i
+        for i in column_profiles.keys()
+        if column_profiles[i]["distribution"] == "unique_value"
+    ]
+    high_cardinality = [
+        i
+        for i in cat_cols
+        if column_profiles[i]["n_unique_to_shape"] > high_cardinality_threshold
+    ]
 
-    return reduced_df
+    reduced_data_sample = reduced_data_sample.drop(list(unique), axis=1)
+    reduced_data_sample = reduced_data_sample.drop(list(high_cardinality), axis=1)
+    too_much_info = [
+        [i, column_profiles[i]["rare_labels (<5% frequency)"]]
+        for i in cat_cols
+        if len(column_profiles[i]["rare_labels (<5% frequency)"]) > 0
+    ]
+
+    for i in too_much_info:
+        reduced_data_sample[i[0]] = reduced_data_sample[i[0]].replace(
+            i[1],
+            "Grouped_labels",
+        )
+
+    return reduced_data_sample

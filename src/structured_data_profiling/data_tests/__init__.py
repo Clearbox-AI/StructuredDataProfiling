@@ -3,7 +3,6 @@ from .temporal_test import *
 
 
 __all__ = [
-    "check_cardinality",
     "check_precision",
     "find_deterministic_columns_binary",
     "find_deterministic_columns_regression",
@@ -12,5 +11,5 @@ __all__ = [
     "fit_distributions",
     "get_features_correlation",
     "get_label_correlation",
-    "find_sequences",
+    "sequence_profiles",
 ]
