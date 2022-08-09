@@ -1,4 +1,4 @@
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier, export_text
 from sklearn.linear_model import LinearRegression
 import copy
 import re
@@ -7,6 +7,7 @@ import pandas as pd
 import scipy.stats as ss
 import itertools
 from distfit import distfit
+from tqdm import tqdm
 
 
 def fit_distributions(x: pd.Series):
@@ -58,6 +59,14 @@ def find_deterministic_columns_binary(df, binary):
             df[numerical_cols].fillna(0).iloc[jts],
             y.iloc[jts].astype(np.int32),
         )
+
+        text = export_text(clf, feature_names=list(df[numerical_cols].columns))
+        #print(export_text(clf, decimals=4))
+        print(i, text, score)
+
+        print(float(text.split('|')[-3].split('>')[-1]))
+        print(float(text.split('|')[-1].split(':')[-1]))
+
         if score > 0.999:
             deterministic.append([i, clf, copy.deepcopy(numerical_cols)])
 
@@ -73,7 +82,7 @@ def find_deterministic_columns_regression(df):
     if len(numerical_cols) <= 1:
         return deterministic_num, numerical_cols
 
-    for j, i in enumerate(numerical_cols):
+    for j, i in enumerate(tqdm(numerical_cols)):
         clf = LinearRegression(n_jobs=-1, positive=True, fit_intercept=True).fit(
             df[numerical_cols].fillna(0).drop(i, axis=1).iloc[jtr],
             df[i].fillna(0).iloc[jtr],
@@ -93,7 +102,7 @@ def find_deterministic_columns_regression(df):
 def find_ordinal_columns(df, cat_columns):
     ordinal_dicts = {}
 
-    for i in cat_columns:
+    for i in tqdm(cat_columns):
         if 2 < df[i].nunique() < 255:
             s = []
             unique = df[i].fillna("N/A").unique()
@@ -136,9 +145,13 @@ def get_features_correlation(X):
         return np.sqrt(phi2corr / min((kcorr - 1), (rcorr - 1)))
 
     features_correlation = pd.DataFrame(index=X.columns, columns=X.columns)
-    for feature_i in X.columns:
-        for feature_j in X.columns:
-            confusion_matrix = pd.crosstab(X[feature_i], X[feature_j])
+    print('Calculating correlation matrix:')
+    Xsample = copy.deepcopy(X)
+    samples = min(5000, X.shape[0])
+    Xsample = Xsample.sample(n=samples)
+    for feature_i in tqdm(Xsample.columns):
+        for feature_j in Xsample.columns:
+            confusion_matrix = pd.crosstab(Xsample[feature_i].fillna(0), Xsample[feature_j].fillna(0))
 
             features_correlation[feature_i].loc[feature_j] = float(
                 round(_cramers_corrected_stat(confusion_matrix), 4),
@@ -158,7 +171,7 @@ def get_label_correlation(
     merged = list(itertools.chain(*list2d))
     corr = []
     Xnp = Xproc.values
-    for j in range(len(merged)):
+    for j in tqdm(range(len(merged))):
         Xt = Xnp[Xnp[:, j] == 1]
         d = Xt.shape[0]
         sample2 = np.random.choice(np.arange(d), d, replace=False)
@@ -171,7 +184,3 @@ def get_label_correlation(
 
     return corr
 
-
-def datetime_tests():
-
-    return

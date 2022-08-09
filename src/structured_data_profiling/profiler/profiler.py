@@ -9,7 +9,7 @@ import pickle
 from structured_data_profiling.preprocessor import Preprocessor
 from structured_data_profiling.data_tests import *
 from structured_data_profiling.data_tests import sequence_profiles
-
+from tqdm import tqdm
 from structured_data_profiling.expectations import *
 from structured_data_profiling.utils import *
 
@@ -86,8 +86,6 @@ class DatasetProfiler:
         self.data_sample = df.iloc[samples]
         self.original_shape = df.shape
 
-        types = ["string" if i == "object" else "number" for i in df.dtypes]
-        self.column_types = dict(zip(list(df.columns), types))
 
         self.reduced_data_sample = copy.deepcopy(self.data_sample)
 
@@ -96,9 +94,13 @@ class DatasetProfiler:
                 self.primary_key,
                 axis=1,
             )
+        print('Identifying data types...')
+        types = ["string" if i == "object" else "number" for i in self.reduced_data_sample.dtypes]
+
+        self.column_types = dict(zip(list(self.reduced_data_sample.columns), types))
 
         possible_dates = identify_dates(self.reduced_data_sample)
-        for i in possible_dates.keys():
+        for i in tqdm(possible_dates.keys()):
             self.column_types[i] = possible_dates[i]
 
         self.tests = None
@@ -123,7 +125,7 @@ class DatasetProfiler:
         # self.rare_labels = rare_labels
         # self.unique_value = unique
 
-        self.prepro = Preprocessor(self.reduced_data_sample)
+        self.prepro = Preprocessor(self.reduced_data_sample, column_types=self.column_types)
         self.tests = self.data_tests()
 
         print("Profiling finished.")
@@ -136,7 +138,8 @@ class DatasetProfiler:
     ):
 
         self.column_profiles = {}
-        for i in data.columns:
+        print('1: Profiling columns:')
+        for i in tqdm(data.columns):
 
             loc_dict = {
                 "type": self.column_types[i],
@@ -145,7 +148,7 @@ class DatasetProfiler:
                 "n_unique_to_shape": data[i].nunique() / data[i].shape[0],
             }
 
-            if self.column_types[i] != "string":
+            if self.column_types[i] == "number":
                 loc_dict["non_negative"] = (data[i].fillna(0) >= 0).sum() / data.shape[
                     0
                 ] == 1
@@ -177,11 +180,11 @@ class DatasetProfiler:
             elif self.column_types[i] == "string/date":
                 loc_dict["most_frequent"] = [
                     data[i].value_counts().keys()[0],
-                    data[i].value_counts()[0],
+                    data[i].value_counts().iloc[0],
                 ]
                 loc_dict["least_frequent"] = [
                     data[i].value_counts().keys()[-1],
-                    data[i].value_counts()[-1],
+                    data[i].value_counts().iloc[-1],
                 ]
 
                 if loc_dict["n_unique"] == 2:
@@ -208,11 +211,11 @@ class DatasetProfiler:
 
                 loc_dict["most_frequent"] = [
                     data[i].value_counts().keys()[0],
-                    data[i].value_counts()[0],
+                    data[i].value_counts().iloc[0],
                 ]
                 loc_dict["least_frequent"] = [
                     data[i].value_counts().keys()[-1],
-                    data[i].value_counts()[-1],
+                    data[i].value_counts().iloc[-1],
                 ]
                 if loc_dict["n_unique"] == 2:
                     loc_dict["distribution"] = "Bernoulli"
@@ -361,6 +364,8 @@ class DatasetProfiler:
         data_tests = {}
         xp = self.prepro.transform(self.reduced_data_sample)
         xp_nan = self.prepro.transform_missing(self.reduced_data_sample)
+        print('Finding bi-variate tests...')
+
         bivariate_tests = get_label_correlation(
             xp,
             self.prepro.cat_cols,
@@ -368,6 +373,8 @@ class DatasetProfiler:
             delta_tr=0.05,
         )
         data_tests["bivariate_tests"] = bivariate_tests
+        print('Finding missing-values tests...')
+
         missing_values_tests = get_label_correlation(
             xp_nan,
             self.prepro.nan_cols,
@@ -402,6 +409,7 @@ class DatasetProfiler:
             if self.column_profiles[i]["distribution"] == "Bernoulli"
         ]
         #
+        print('Finding threshold columns...')
 
         deterministic_columns_binary, num_cols = find_deterministic_columns_binary(
             self.reduced_data_sample,
@@ -410,6 +418,7 @@ class DatasetProfiler:
         data_tests["deterministic_columns_binary"] = deterministic_columns_binary
 
         to_drop = [i[0] for i in deterministic_columns_binary]
+        print('Finding linear combinations...')
 
         self.reduced_data_sample = self.reduced_data_sample.drop(to_drop, axis=1)
         linear_combinations, num_cols = find_deterministic_columns_regression(

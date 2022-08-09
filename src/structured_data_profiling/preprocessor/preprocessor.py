@@ -3,13 +3,14 @@ import copy
 
 
 class Preprocessor:
-    def __init__(self, x: pd.DataFrame, n_bins=5):
-        self.num = x.columns[x.dtypes != "object"]
+    def __init__(self, x: pd.DataFrame, column_types, n_bins=5):
+
+        self.num = [i for i in column_types.keys() if column_types[i] == 'number'] #x.columns[x.dtypes != "object"]
         self.cat_cols = None
         self.nan_cols = None
 
         self.bins = n_bins
-        self.cat = x.columns
+        self.cat = [i for i in column_types.keys() if column_types[i] in ['number', 'string']]
 
     def transform(self, x_in):
         x = copy.deepcopy(x_in)

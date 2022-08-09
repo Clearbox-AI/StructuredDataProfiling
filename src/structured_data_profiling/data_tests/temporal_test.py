@@ -104,3 +104,8 @@ def sequence_profiles(df, sequence_index, primary_key):
             complete_ids.append(None)
 
     return sorted_seq, complete_ids
+
+
+def datetime_tests(X):
+
+    return X
