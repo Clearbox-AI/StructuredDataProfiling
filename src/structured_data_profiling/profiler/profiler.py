@@ -69,6 +69,7 @@ class DatasetProfiler:
         else:
             self.target = None
             self.regression = False
+        self.contains_sequence = contains_sequence
 
         if contains_sequence:
             if primary_key:
@@ -86,14 +87,25 @@ class DatasetProfiler:
         self.data_sample = df.iloc[samples]
         self.original_shape = df.shape
 
+        self.dataset_profile = {}
 
         self.reduced_data_sample = copy.deepcopy(self.data_sample)
+        if self.contains_sequence is True:
+            if self.sequence_index is not None:
+                self.reduced_data_sample = self.reduced_data_sample.drop(
+                    self.sequence_index,
+                    axis=1,
+                )
+            self.dataset_profile['sequence_length'] = \
+                self.reduced_data_sample.groupby(primary_key).count().max(axis=1).value_counts()
+            self.reduced_data_sample = self.reduced_data_sample.groupby(primary_key).nth(0)
 
-        if self.primary_key is not None:
+        if (self.primary_key is not None) and (self.contains_sequence is False):
             self.reduced_data_sample = self.reduced_data_sample.drop(
                 self.primary_key,
                 axis=1,
             )
+
         print('Identifying data types...')
         types = ["string" if i == "object" else "number" for i in self.reduced_data_sample.dtypes]
 
@@ -105,7 +117,6 @@ class DatasetProfiler:
 
         self.tests = None
         self.column_profiles = None
-        self.dataset_profile = None
 
         self.prepro = None
 
@@ -125,7 +136,7 @@ class DatasetProfiler:
         # self.rare_labels = rare_labels
         # self.unique_value = unique
 
-        self.prepro = Preprocessor(self.reduced_data_sample, column_types=self.column_types)
+        self.prepro = Preprocessor(column_types=self.column_types)
         self.tests = self.data_tests()
 
         print("Profiling finished.")
@@ -138,7 +149,7 @@ class DatasetProfiler:
     ):
 
         self.column_profiles = {}
-        print('1: Profiling columns:')
+        print('Profiling columns:')
         for i in tqdm(data.columns):
 
             loc_dict = {
@@ -164,7 +175,7 @@ class DatasetProfiler:
                 )
                 if loc_dict["n_unique"] == 2:
                     loc_dict["distribution"] = "Bernoulli"
-                if loc_dict["n_unique"] == 1:
+                if loc_dict["n_unique"] <= 1:
                     loc_dict["distribution"] = "unique_value"
 
                 if (loc_dict["n_unique"] > 2) and fit_distribution is True:
@@ -178,21 +189,37 @@ class DatasetProfiler:
                         ] = "Could not fit uni-variate distribution"
 
             elif self.column_types[i] == "string/date":
-                loc_dict["most_frequent"] = [
-                    data[i].value_counts().keys()[0],
-                    data[i].value_counts().iloc[0],
-                ]
-                loc_dict["least_frequent"] = [
-                    data[i].value_counts().keys()[-1],
-                    data[i].value_counts().iloc[-1],
-                ]
 
                 if loc_dict["n_unique"] == 2:
                     loc_dict["distribution"] = "Bernoulli"
-                if loc_dict["n_unique"] == 1:
+                    loc_dict["most_frequent"] = [
+                        data[i].value_counts().keys()[0],
+                        data[i].value_counts().iloc[0],
+                    ]
+                    loc_dict["least_frequent"] = [
+                        data[i].value_counts().keys()[-1],
+                        data[i].value_counts().iloc[-1],
+                    ]
+                elif loc_dict["n_unique"] <= 1:
                     loc_dict["distribution"] = "unique_value"
-
-                loc_dict["distribution"] = "N/A"
+                    loc_dict["most_frequent"] = [
+                        'N/A',
+                        'N/A',
+                    ]
+                    loc_dict["least_frequent"] = [
+                        'N/A',
+                        'N/A',
+                    ]
+                else:
+                    loc_dict["distribution"] = "N/A"
+                    loc_dict["most_frequent"] = [
+                        data[i].value_counts().keys()[0],
+                        data[i].value_counts().iloc[0],
+                    ]
+                    loc_dict["least_frequent"] = [
+                        data[i].value_counts().keys()[-1],
+                        data[i].value_counts().iloc[-1],
+                    ]
 
             elif self.column_types[i] in ["number/timestamp", "number/timestamp_ms"]:
 
@@ -202,27 +229,43 @@ class DatasetProfiler:
 
                 if loc_dict["n_unique"] == 2:
                     loc_dict["distribution"] = "Bernoulli"
-                if loc_dict["n_unique"] == 1:
+                if loc_dict["n_unique"] <= 1:
                     loc_dict["distribution"] = "unique_value"
 
                 loc_dict["distribution"] = "N/A"
 
             else:
 
-                loc_dict["most_frequent"] = [
-                    data[i].value_counts().keys()[0],
-                    data[i].value_counts().iloc[0],
-                ]
-                loc_dict["least_frequent"] = [
-                    data[i].value_counts().keys()[-1],
-                    data[i].value_counts().iloc[-1],
-                ]
                 if loc_dict["n_unique"] == 2:
                     loc_dict["distribution"] = "Bernoulli"
-                elif loc_dict["n_unique"] == 1:
+                    loc_dict["most_frequent"] = [
+                        data[i].value_counts().keys()[0],
+                        data[i].value_counts().iloc[0],
+                    ]
+                    loc_dict["least_frequent"] = [
+                        data[i].value_counts().keys()[-1],
+                        data[i].value_counts().iloc[-1],
+                    ]
+                elif loc_dict["n_unique"] <= 1:
                     loc_dict["distribution"] = "unique_value"
+                    loc_dict["most_frequent"] = [
+                        'N/A',
+                        'N/A',
+                    ]
+                    loc_dict["least_frequent"] = [
+                        'N/A',
+                        'N/A',
+                    ]
                 else:
                     loc_dict["distribution"] = "Categorical"
+                    loc_dict["most_frequent"] = [
+                        data[i].value_counts().keys()[0],
+                        data[i].value_counts().iloc[0],
+                    ]
+                    loc_dict["least_frequent"] = [
+                        data[i].value_counts().keys()[-1],
+                        data[i].value_counts().iloc[-1],
+                    ]
                 counts = data[i].value_counts()
                 loc_dict["rare_labels (<5% frequency)"] = list(
                     counts.keys()[(counts / data.shape[0]) < 0.05],
@@ -237,20 +280,23 @@ class DatasetProfiler:
 
     def dataset_profiler(self):
 
-        profile_output = {}
-        duplicates_percentage = (
-            self.reduced_data_sample[
-                self.reduced_data_sample.duplicated() == True
-            ].shape[0]
-            / self.reduced_data_sample.shape[0]
-            * 100
-        )
+        duplicates = self.reduced_data_sample.duplicated() == True
+        if len(duplicates > 0):
+            duplicates_percentage = (
+                self.reduced_data_sample[
+                    duplicates
+                ].shape[0]
+                / self.reduced_data_sample.shape[0]
+                * 100
+            )
+        else:
+            duplicates_percentage = 0.
 
         correlations = get_features_correlation(self.reduced_data_sample)
-        profile_output["number_of_duplicates"] = duplicates_percentage
-        profile_output["correlation_matrix"] = correlations
+        self.dataset_profile["number_of_duplicates"] = duplicates_percentage
+        self.dataset_profile["correlation_matrix"] = correlations
 
-        return profile_output
+        return
 
     def summary(self):
 

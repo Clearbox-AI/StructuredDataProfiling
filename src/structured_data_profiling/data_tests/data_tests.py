@@ -63,9 +63,9 @@ def find_deterministic_columns_binary(df, binary):
         text = export_text(clf, feature_names=list(df[numerical_cols].columns))
         #print(export_text(clf, decimals=4))
         print(i, text, score)
-
-        print(float(text.split('|')[-3].split('>')[-1]))
-        print(float(text.split('|')[-1].split(':')[-1]))
+        #
+        # print(float(text.split('|')[-3].split('>')[-1]))
+        # print(float(text.split('|')[-1].split(':')[-1]))
 
         if score > 0.999:
             deterministic.append([i, clf, copy.deepcopy(numerical_cols)])
@@ -147,7 +147,7 @@ def get_features_correlation(X):
     features_correlation = pd.DataFrame(index=X.columns, columns=X.columns)
     print('Calculating correlation matrix:')
     Xsample = copy.deepcopy(X)
-    samples = min(5000, X.shape[0])
+    samples = min(2000, X.shape[0])
     Xsample = Xsample.sample(n=samples)
     for feature_i in tqdm(Xsample.columns):
         for feature_j in Xsample.columns:
