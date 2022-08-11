@@ -25,7 +25,6 @@ class DatasetProfiler:
         self,
         df_path: str,
         primary_key: str = None,
-        contains_sequence: bool = False,
         sequence_index: str = None,
         target: str = None,
         regression: bool = False,
@@ -52,7 +51,7 @@ class DatasetProfiler:
         self.path = df_path
 
         if primary_key is not None:
-            if df[primary_key].isna().sum() == 0:
+            if max(df[primary_key].isna().sum()) == 0:
                 self.primary_key = primary_key
             else:
                 print("Error during initialisation: ")
@@ -69,17 +68,10 @@ class DatasetProfiler:
         else:
             self.target = None
             self.regression = False
-        self.contains_sequence = contains_sequence
 
-        if contains_sequence:
-            if primary_key:
-                self.sequence_index = sequence_index
-            else:
-                print("Error during initialisation: ")
-                print(
-                    "Error during initialisation: contains_sequence==True requires the definition of a primary_key",
-                )
-                return
+
+        contains_sequence = False
+
 
         samples = np.random.choice(df.shape[0], min(n_samples, df.shape[0]))
         self.n_samples = n_samples
@@ -90,24 +82,32 @@ class DatasetProfiler:
         self.dataset_profile = {}
 
         self.reduced_data_sample = copy.deepcopy(self.data_sample)
-        if self.contains_sequence is True:
+
+        if self.primary_key:
+            sequence_data = self.reduced_data_sample.groupby(primary_key).count().max(axis=1).value_counts()
+            if list(sequence_data.keys())[0] == 1:
+                print('Identified sequential data.')
+                contains_sequence = True
+                self.sequence_index = sequence_index
+
+        if contains_sequence is True:
             if self.sequence_index is not None:
                 self.reduced_data_sample = self.reduced_data_sample.drop(
                     self.sequence_index,
                     axis=1,
                 )
-            self.dataset_profile['sequence_length'] = \
-                self.reduced_data_sample.groupby(primary_key).count().max(axis=1).value_counts()
+            self.dataset_profile['sequence_length'] = sequence_data
+
             self.reduced_data_sample = self.reduced_data_sample.groupby(primary_key).nth(0)
 
-        if (self.primary_key is not None) and (self.contains_sequence is False):
+        if (self.primary_key is not None) and (contains_sequence is False):
             self.reduced_data_sample = self.reduced_data_sample.drop(
                 self.primary_key,
                 axis=1,
             )
 
         print('Identifying data types...')
-        types = ["string" if i == "object" else "number" for i in self.reduced_data_sample.dtypes]
+        types = ["string" if i in ["object", "bool"] else "number" for i in self.reduced_data_sample.dtypes]
 
         self.column_types = dict(zip(list(self.reduced_data_sample.columns), types))
 
@@ -119,7 +119,12 @@ class DatasetProfiler:
         self.column_profiles = None
 
         self.prepro = None
-
+        # ordinal_columns = find_ordinal_columns(
+        #     self.reduced_data_sample,
+        #     cat_columns,
+        # )
+        #
+        # data_tests["ordinal_columns_tests"] = ordinal_columns
         return
 
     def profile(self, tol: float = 1e-6):
@@ -410,8 +415,10 @@ class DatasetProfiler:
         data_tests = {}
         xp = self.prepro.transform(self.reduced_data_sample)
         xp_nan = self.prepro.transform_missing(self.reduced_data_sample)
-        print('Finding bi-variate tests...')
 
+        data_tests["is_greater_than"] = column_a_greater_than_b(self.reduced_data_sample, self.column_types, t=0.95)
+
+        print('Finding bi-variate tests...')
         bivariate_tests = get_label_correlation(
             xp,
             self.prepro.cat_cols,
@@ -432,12 +439,6 @@ class DatasetProfiler:
         cat_columns = self.reduced_data_sample.columns[
             self.reduced_data_sample.dtypes == "object"
         ]
-        ordinal_columns = find_ordinal_columns(
-            self.reduced_data_sample,
-            cat_columns,
-        )
-
-        data_tests["ordinal_columns_tests"] = ordinal_columns
 
         # for i in self.ordinal_columns.keys():
         #     for j in self.ordinal_columns[i].keys():

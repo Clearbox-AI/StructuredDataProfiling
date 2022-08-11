@@ -12,4 +12,5 @@ __all__ = [
     "get_features_correlation",
     "get_label_correlation",
     "sequence_profiles",
+    "column_a_greater_than_b",
 ]

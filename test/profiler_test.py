@@ -32,6 +32,6 @@ def test_import(data_path):
 def test_profile(data_path):
     dp = DatasetProfiler(data_path[1])
     dp.profile()
-    dp.warnings()
+#    dp.warnings()
     assert dp.reduced_data_sample.shape[0] > 0
     assert dp.reduced_data_sample.shape[1] > 0
