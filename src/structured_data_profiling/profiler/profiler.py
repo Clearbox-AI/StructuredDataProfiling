@@ -28,7 +28,7 @@ class DatasetProfiler:
         sequence_index: str = None,
         target: str = None,
         regression: bool = False,
-        n_samples: int = 10000,
+        n_samples: int = None,
         compression: str = None,
     ):
         """
@@ -69,12 +69,14 @@ class DatasetProfiler:
             self.target = None
             self.regression = False
 
-
         contains_sequence = False
 
+        if n_samples is None:
+            n_samples = int(0.1*df.shape[0])
 
         samples = np.random.choice(df.shape[0], min(n_samples, df.shape[0]))
         self.n_samples = n_samples
+        self.samples = samples
 
         self.data_sample = df.iloc[samples]
         self.original_shape = df.shape
@@ -129,7 +131,7 @@ class DatasetProfiler:
 
     def profile(self, tol: float = 1e-6):
 
-        self.column_profiler(self.reduced_data_sample)
+        self.column_profiler(self.reduced_data_sample,fit_distribution=False)
 
         self.reduced_data_sample = reduce_dataframe(
             self.reduced_data_sample,
@@ -162,6 +164,7 @@ class DatasetProfiler:
                 "n_unique": data[i].nunique(),
                 "na_frac": data[i].isna().sum() / data.shape[0],
                 "n_unique_to_shape": data[i].nunique() / data[i].shape[0],
+                "distribution": 'N/A',
             }
 
             if self.column_types[i] == "number":
@@ -483,7 +486,7 @@ class DatasetProfiler:
             "local_suite",
             overwrite_existing=True,
         )
-        batch = ge.dataset.PandasDataset(self.data_sample, expectation_suite=suite)
+        batch = ge.dataset.PandasDataset(self.data_sample.reset_index(), expectation_suite=suite)
 
         cat_cols = [
             i
@@ -502,6 +505,8 @@ class DatasetProfiler:
             self.prepro,
             rare_labels,
         )
+
+        batch = column_greater_than(batch, self.tests["is_greater_than"])
 
         suite = batch.get_expectation_suite()
         data_context.save_expectation_suite(suite)

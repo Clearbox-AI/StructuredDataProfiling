@@ -30,8 +30,8 @@ class Preprocessor:
         cat = [i for i in x_in.columns if i in self.cat]
         for i in cat:
             xc = pd.get_dummies(x[i], prefix=i)
-            if "nan" in list(xc.columns):
-                xc = xc.drop(["nan"], axis=1)
+            if i+"_nan" in list(xc.columns):
+                xc = xc.drop([i+"_nan"], axis=1)
             cat_cols[i] = list(xc.columns)
 
             xproc = pd.concat([xproc, xc], axis=1)

@@ -147,7 +147,11 @@ def get_features_correlation(X):
     features_correlation = pd.DataFrame(index=X.columns, columns=X.columns)
     print('Calculating correlation matrix:')
     Xsample = copy.deepcopy(X)
-    samples = min(2000, X.shape[0])
+    if X.shape[1] > 100:
+        n = 500
+    else:
+        n = 2000
+    samples = min(n, X.shape[0])
     Xsample = Xsample.sample(n=samples)
     for feature_i in tqdm(Xsample.columns):
         for feature_j in Xsample.columns:
@@ -185,14 +189,16 @@ def get_label_correlation(
     return corr
 
 
-def column_a_greater_than_b(x, column_types, t=0.95):
+def column_a_greater_than_b(x, column_types, t=1.):
     num_cols = [i for i in x.columns if column_types[i] == 'number']
     comp_matrix = dict()
     for i in tqdm(num_cols):
         for j in num_cols:
             d = (x[i]-x[j]).dropna()
+            std = 2.0 * x[i].std()
             p = (d >= 0).sum()/d.shape[0]
-            if i != j and p >= t and d.shape[0]/x.shape[0] > 0.1:
+            d_range = (np.abs(d) < std).sum()/d.shape[0]
+            if i != j and p >= t and d_range>=t and d.shape[0]/x.shape[0] > 0.1:
                 comp_matrix[i, j] = (d >= 0).sum()/d.shape[0]
 
     return comp_matrix
