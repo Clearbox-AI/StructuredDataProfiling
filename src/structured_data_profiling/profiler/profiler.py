@@ -1,14 +1,9 @@
-from functools import reduce
 import numpy as np
 import pandas as pd
-import dateparser
-from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 import copy
 import pickle
 from structured_data_profiling.preprocessor import Preprocessor
 from structured_data_profiling.data_tests import *
-from structured_data_profiling.data_tests import sequence_profiles
 from tqdm import tqdm
 from structured_data_profiling.expectations import *
 from structured_data_profiling.utils import *

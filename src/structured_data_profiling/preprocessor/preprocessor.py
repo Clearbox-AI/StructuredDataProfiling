@@ -40,7 +40,7 @@ class Preprocessor:
         date_cols = [i for i in x_in.columns if i in self.date_cols]
         for i in date_cols:
 
-            date_col = [dateparser.parse(x[i].iloc[j]) for j in range(x.shape[0])]
+            date_col = [dateparser.parse(str(x[i].iloc[j])) for j in range(x.shape[0])]
             day = [j.weekday() for j in date_col]
             #weekend = [j.weekday() >= 5 for j in date_col]
             month = [j.month for j in date_col]
