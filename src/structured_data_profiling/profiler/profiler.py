@@ -46,6 +46,9 @@ class DatasetProfiler:
         self.path = df_path
 
         if primary_key is not None:
+            if type(primary_key) != list:
+                primary_key = [primary_key]
+
             if max(df[primary_key].isna().sum()) == 0:
                 self.primary_key = primary_key
             else:
