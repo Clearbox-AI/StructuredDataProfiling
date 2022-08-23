@@ -13,14 +13,14 @@ requirements = [
     "pandas>=1.3.0",
     "pytest>=5.4.3",
     "pytest-lazy-fixture>=0.6.3",
-    "scikit-learn>=1.1.1",
+    "scikit-learn>=1.0",
     "scipy>=1.7.2",
     "twine>=4.0.1",
 ]
 
 setup(
     name="structured-profiling",
-    version="0.1.4",
+    version="0.1.4.1",
     author="Clearbox AI",
     author_email="info@clearbox.ai",
     description="",
