@@ -10,7 +10,7 @@ requirements = [
     "great-expectations>=0.13.41",
     "joblib>=1.1.0",
     "numpy>=1.20",
-    "pandas>=1.4.2",
+    "pandas>=1.3.0",
     "pytest>=5.4.3",
     "pytest-lazy-fixture>=0.6.3",
     "scikit-learn>=1.1.1",
@@ -20,7 +20,7 @@ requirements = [
 
 setup(
     name="structured-profiling",
-    version="0.1.3.6",
+    version="0.1.4",
     author="Clearbox AI",
     author_email="info@clearbox.ai",
     description="",
