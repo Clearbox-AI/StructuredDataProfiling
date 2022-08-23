@@ -195,10 +195,10 @@ def column_a_greater_than_b(x, column_types, t=1.):
     for i in tqdm(num_cols):
         for j in num_cols:
             d = (x[i]-x[j]).dropna()
-            std = 2.0 * x[i].std()
+            std = 1.0 * x[i].std()
             p = (d >= 0).sum()/d.shape[0]
             d_range = (np.abs(d) < std).sum()/d.shape[0]
-            if i != j and p >= t and d_range>=t and d.shape[0]/x.shape[0] > 0.1:
+            if i != j and p >= t and d_range >= t and d.shape[0]/x.shape[0] > 0.1:
                 comp_matrix[i, j] = (d >= 0).sum()/d.shape[0]
 
     return comp_matrix

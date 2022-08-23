@@ -125,6 +125,11 @@ class DatasetProfiler:
         # )
         #
         # data_tests["ordinal_columns_tests"] = ordinal_columns
+        if contains_sequence is True:
+            self.sequence = True
+            print('Dataset contains sequential data')
+        else:
+            self.sequence = False
         return
 
     def profile(self, tol: float = 1e-6):

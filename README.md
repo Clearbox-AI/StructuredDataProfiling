@@ -1,7 +1,7 @@
 
 ## StructuredDataProfiling
 
-The StructuredDataProfiling is a Python library developed to assess structured datasets and to facilitate the creation of **data tests** through automated data profiling.
+The StructuredDataProfiling is a Python library developed to automatically profile structured datasets and to facilitate the creation of **data tests**.
 
 The library creates data tests in the form of **Expectations** using the [great_expectations](https://www.greatexpectations.io) framework. Expectations are 'declarative statements that a computer can evaluate and semantically meaningful to humans'.
 
@@ -30,7 +30,9 @@ You can import the profiler using
 ```python
 profiler = DatasetProfiler('./csv_path.csv')
 ```
-To start the profiling scripts run the method profile()
+The presence of a primary key (for example to define relations between tables or sequences) can be specified by using the argument **primary key** containing a single or multiple column names.
+
+To start the profiling scripts, you can run the profile() method
 ```python
 profiler.profile()
 ```
@@ -45,9 +47,9 @@ These docs can be found in the local folder ```great_expectations/uncommitted/da
 
 # Profiling outputs
 The profiler generates 3 json files describing the ingested dataset. These json files contain information about:
-- Column profiles: it contains the statistical characterisation of the dataset columns.
-- Data warnings: it highlights issues and limitations affecting the dataset.
-- Data expectations: it contains the data tests found by the profiler.
+- column_profiles: it contains the statistical characterisation of the dataset columns.
+- dataset_profile: it highlights issues and limitations affecting the dataset.
+- tests: it contains the data tests found by the profiler.
 
 The process of generating expectations makes use of the great_expectations library to produce an HTML file contaning data docs. An example of data doc for a given column can be seen in the image below.
 
