@@ -20,7 +20,7 @@ requirements = [
 
 setup(
     name="structured-profiling",
-    version="0.1.3.4",
+    version="0.1.3.5",
     author="Clearbox AI",
     author_email="info@clearbox.ai",
     description="",
