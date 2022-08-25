@@ -140,7 +140,7 @@ class DatasetProfiler:
             self.reduced_data_sample,
             self.column_profiles,
         )
-        self.dataset_profile = self.dataset_profiler()
+        self.dataset_profiler()
         # self.column_profiles = {}
         # self.high_cardinality = high_cardinality
         # self.rare_labels = rare_labels
@@ -302,119 +302,62 @@ class DatasetProfiler:
             )
         else:
             duplicates_percentage = 0.
-
-        correlations = get_features_correlation(self.reduced_data_sample)
+        to_drop = [i for i in self.reduced_data_sample.columns if self.column_types[i] == 'string/date']
+        correlations = get_features_correlation(self.reduced_data_sample.drop(to_drop, axis=1))
         self.dataset_profile["number_of_duplicates"] = duplicates_percentage
         self.dataset_profile["correlation_matrix"] = correlations
 
         return
 
     def summary(self):
-
+        report = pd.DataFrame(columns=['profiling_type', 'outcome'])
         num_cols = [
-            i for i in self.column_profiles if self.column_profiles[i]["type"] != object
+            i for i in self.column_profiles if self.column_profiles[i]["type"] == 'number'
         ]
         cat_cols = [
-            i for i in self.column_profiles if self.column_profiles[i]["type"] == object
+            i for i in self.column_profiles if self.column_profiles[i]["type"] == 'string'
         ]
-        print(
-            "Found "
-            + str(len(num_cols))
-            + " numerical columns and "
-            + str(len(cat_cols))
-            + " categorical columns.",
+        string_dates = [i for i in self.column_types.keys() if self.column_types[i] == 'string/date']
+        timestamps = [
+            i for i in self.column_types.keys() if self.column_types[i] in [
+                'number/timestamps',
+                'number/timestamps_ms',
+            ]
+        ]
+        report.loc[0] = ['column_types', {"numerical_columns": "num_cols", "categorical_columns": "cat_cols"}]
+        report.loc[1] = ['datetime_columns', string_dates + timestamps]
+        report.loc[2] = [
+            'duplicate_rows',
+            self.dataset_profile['number_of_duplicates'],
+        ]
+        report.loc[3] = [
+            'non_negative_colums',
+            str([i for i in num_cols if self.column_profiles[i]["non_negative"] is True]),
+        ]
+        report.loc[4] = [
+            'non_positive_colums',
+            str([i for i in num_cols if self.column_profiles[i]["non_positive"] is True]),
+        ]
+
+        # dp.dataset_profile['correlation_matrix']
+        cols = self.dataset_profile['correlation_matrix'].columns
+        a = self.dataset_profile['correlation_matrix'].values - np.eye(
+            self.dataset_profile['correlation_matrix'].shape[0],
         )
-        print("\n")
+        indeces = np.triu_indices(self.dataset_profile['correlation_matrix'].shape[0])
+        z = np.dstack((indeces[0], indeces[1]))
 
-        non_neg = [
-            i for i in num_cols if self.column_profiles[i]["non_negative"] is True
-        ]
-        non_pos = [
-            i for i in num_cols if self.column_profiles[i]["non_positive"] is True
-        ]
+        list_corr = [(cols[i[0]], cols[i[1]]) for i in z[0] if a[i[0], i[1]] > 0.6]
+        list_corr1 = [(cols[i[0]], cols[i[1]]) for i in z[0] if a[i[0], i[1]] > 0.6]
 
-        if self.duplicates_percentage > 1.0:
-            print(
-                str(self.duplicates_percentage)
-                + " % of the rows has at least one duplicate.",
-            )
-            print("\n")
+        del a
 
-        high_corr = (
-            self.correlations.values - np.eye(self.correlations.shape[0]) > 0.8
-        ).sum()
-        if high_corr > 0:
-            print(str(high_corr / 2) + " columns are highly correlated (>80%)")
-            print("\n")
+        report.loc[5] = ['highly correlated columns (>60%)', list_corr]
+        report.loc[6] = ['highly correlated columns (>80%)', list_corr1]
+        unique = [i for i in self.column_profiles.keys() if self.column_profiles[i]['distribution'] == 'unique_value']
+        report.loc[7] = ['Columns containing unique values', unique]
 
-        if self.ordinal_columns is not None:
-            print("The following columns might be categorical/ordinal:")
-            print("\n")
-
-            for i in self.ordinal_columns:
-                print(i, self.ordinal_columns[i])
-                print("\n")
-
-        l = [i for i in self.unique_value]
-        if len(l) > 0:
-            print("Found " + str(len(l)) + " columns containing a unique value")
-            print("\n")
-            print(l)
-            print("\n")
-
-        if len(self.rare_labels) > 0:
-            print("The following categorical labels are too rare (frequency<0.005%):")
-            print("\n")
-            for j in self.rare_labels:
-                print(j)
-            print("\n")
-
-        l = [i[0] for i in self.deterministic_columns_regression]
-        if len(l) > 0:
-            print("Found " + str(len(l)) + " deterministic numerical columns. ")
-            print("\n")
-            print(l)
-            print("\n")
-
-        l = [i[0] for i in self.deterministic_columns_binary]
-        if len(l) > 0:
-            print("Found " + str(len(l)) + " deterministic binary columns. ")
-            print("\n")
-            print(l)
-            print("\n")
-
-        l = [
-            i for i in self.column_profiles if self.column_profiles[i]["na_frac"] > 0.75
-        ]
-        if len(l) > 0:
-            print(
-                "Warning, the following columns contain more than 75% of missing values:\n",
-            )
-            print("\n")
-            print(l)
-            print("\n")
-
-        l = [
-            i for i in self.column_profiles if self.column_profiles[i]["na_frac"] > 0.99
-        ]
-        if len(l) > 0:
-            print(
-                "Warning, the following columns contain more than 99% of missing values:\n",
-            )
-            print("\n")
-            print(l)
-            print("\n")
-
-        if len(non_neg) > 0:
-            print("The following columns are non negative")
-            print("\n")
-            print(non_neg)
-            print("\n")
-        if len(non_pos) > 0:
-            print("The following columns are non positive")
-            print("\n")
-            print(non_pos)
-        return
+        return report
 
     def data_tests(self):
 
