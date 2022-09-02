@@ -1,6 +1,3 @@
-import numpy as np
-
-
 def create_interval(string: str):
     bounds = string.split("_")[-1].replace("[", "").replace(")", "").split(",")
     return float(bounds[0]), float(bounds[1])
@@ -115,7 +112,8 @@ def column_greater_than(data_batch, column_list):
     return data_batch
 
     # TO DO
-    # e2 = batch.expect_column_pair_values_A_to_be_greater_than_B('loan_amount', 'fico_average')
+    # e2 = batch.expect_column_pair_values_A_to_be_greater_than_B('loan_amount',
+    # 'fico_average')
     # expect_column_pair_values_to_be_in_set
     # expect_column_values_to_be_dateutil_parseable
     # expect_column_values_to_be_null

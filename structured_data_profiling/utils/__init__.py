@@ -1,4 +1,4 @@
-from .utils import *
+from .utils import reduce_dataframe
 
 
 __all__ = [

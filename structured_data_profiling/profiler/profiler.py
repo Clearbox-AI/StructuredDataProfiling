@@ -1,12 +1,27 @@
-import numpy as np
-import pandas as pd
 import copy
 import pickle
-from structured_data_profiling.preprocessor import Preprocessor
-from structured_data_profiling.data_tests import *
+
+import numpy as np
+import pandas as pd
 from tqdm import tqdm
-from structured_data_profiling.expectations import *
-from structured_data_profiling.utils import *
+
+from structured_data_profiling.data_tests import (
+    check_precision,
+    column_a_greater_than_b,
+    find_deterministic_columns_binary,
+    find_deterministic_columns_regression,
+    fit_distributions,
+    get_features_correlation,
+    get_label_correlation,
+    identify_dates,
+)
+from structured_data_profiling.expectations import (
+    add_column_expectations,
+    add_conditional_expectations,
+    column_greater_than,
+)
+from structured_data_profiling.preprocessor import Preprocessor
+from structured_data_profiling.utils import reduce_dataframe
 
 
 class DatasetProfiler:
@@ -37,7 +52,8 @@ class DatasetProfiler:
         sequence_index : str, optional
             name of the column from the CSV containing a sequence index.
         target : str, optional
-            name of the column from the CSV containing a supervised learning target variable.
+            name of the column from the CSV containing a supervised learning target
+            variable.
         compression : :obj:`int`, optional
             Description of `param3`.
 
@@ -204,7 +220,7 @@ class DatasetProfiler:
                         loc_dict["distribution"] = fit_distributions(
                             data[i].sample(n=min(1000, data.shape[0])),
                         )
-                    except:
+                    except Exception:
                         loc_dict[
                             "distribution"
                         ] = "Could not fit uni-variate distribution"
@@ -301,7 +317,7 @@ class DatasetProfiler:
 
     def dataset_profiler(self):
 
-        duplicates = self.reduced_data_sample.duplicated() == True
+        duplicates = self.reduced_data_sample.duplicated() is True
         if len(duplicates > 0):
             duplicates_percentage = (
                 self.reduced_data_sample[duplicates].shape[0]
@@ -330,11 +346,13 @@ class DatasetProfiler:
             for i in self.column_profiles
             if self.column_profiles[i]["type"] == "number"
         ]
+        """
         cat_cols = [
             i
             for i in self.column_profiles
             if self.column_profiles[i]["type"] == "string"
         ]
+        """
         string_dates = [
             i for i in self.column_types.keys() if self.column_types[i] == "string/date"
         ]
@@ -420,14 +438,16 @@ class DatasetProfiler:
             delta_tr=0.05,
         )
         data_tests["missing_values_tests"] = missing_values_tests
-
+        """
         cat_columns = self.reduced_data_sample.columns[
             self.reduced_data_sample.dtypes == "object"
         ]
+        """
 
         # for i in self.ordinal_columns.keys():
         #     for j in self.ordinal_columns[i].keys():
-        #         self.reduced_data_sample[i] = self.reduced_data_sample[i].replace(j, self.ordinal_columns[i][j])
+        #         self.reduced_data_sample[i] = self.reduced_data_sample[i].replace(j,
+        #         self.ordinal_columns[i][j])
         samples = np.random.choice(
             self.reduced_data_sample.shape[0],
             min(self.n_samples, self.reduced_data_sample.shape[0]),

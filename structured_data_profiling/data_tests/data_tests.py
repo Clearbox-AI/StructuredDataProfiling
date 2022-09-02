@@ -1,12 +1,13 @@
-from sklearn.tree import DecisionTreeClassifier, export_text
-from sklearn.linear_model import LinearRegression
 import copy
+import itertools
 import re
+
+from distfit import distfit
 import numpy as np
 import pandas as pd
 import scipy.stats as ss
-import itertools
-from distfit import distfit
+from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeClassifier, export_text
 from tqdm import tqdm
 
 
@@ -107,11 +108,11 @@ def find_ordinal_columns(df, cat_columns):
             s = []
             unique = df[i].fillna("N/A").unique()
             for j in unique:
-                l = np.array([int(i) for i in re.findall(r"\d+", j.replace(".", ""))])
-                if len(l) == 0:
-                    l = np.array([-1])
+                lp = np.array([int(i) for i in re.findall(r"\d+", j.replace(".", ""))])
+                if len(lp) == 0:
+                    lp = np.array([-1])
 
-                s.append((l.max() + l.min()) / 2)
+                s.append((lp.max() + lp.min()) / 2)
 
             possible_dict = dict(
                 zip([unique[i] for i in np.argsort(s)], np.arange(unique.shape[0])),
