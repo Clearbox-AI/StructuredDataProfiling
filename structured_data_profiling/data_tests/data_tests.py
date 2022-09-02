@@ -157,7 +157,8 @@ def get_features_correlation(X):
     for feature_i in tqdm(Xsample.columns):
         for feature_j in Xsample.columns:
             confusion_matrix = pd.crosstab(
-                Xsample[feature_i].fillna(0), Xsample[feature_j].fillna(0)
+                Xsample[feature_i].fillna(0),
+                Xsample[feature_j].fillna(0),
             )
 
             features_correlation[feature_i].loc[feature_j] = float(

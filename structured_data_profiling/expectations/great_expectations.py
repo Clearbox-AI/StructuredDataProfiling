@@ -106,7 +106,8 @@ def column_greater_than(data_batch, column_list):
 
     for test_i in column_list:
         data_batch.expect_column_pair_values_A_to_be_greater_than_B(
-            column_A=test_i[0], column_B=test_i[1]
+            column_A=test_i[0],
+            column_B=test_i[1],
         )
 
     return data_batch

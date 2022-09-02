@@ -120,7 +120,7 @@ class DatasetProfiler:
             self.dataset_profile["sequence_length"] = sequence_data
 
             self.reduced_data_sample = self.reduced_data_sample.groupby(
-                primary_key
+                primary_key,
             ).nth(0)
 
         if (self.primary_key is not None) and (contains_sequence is False):
@@ -332,7 +332,7 @@ class DatasetProfiler:
             if self.column_types[i] == "string/date"
         ]
         correlations = get_features_correlation(
-            self.reduced_data_sample.drop(to_drop, axis=1)
+            self.reduced_data_sample.drop(to_drop, axis=1),
         )
         self.dataset_profile["number_of_duplicates"] = duplicates_percentage
         self.dataset_profile["correlation_matrix"] = correlations
@@ -377,13 +377,21 @@ class DatasetProfiler:
         report.loc[3] = [
             "non_negative_colums",
             str(
-                [i for i in num_cols if self.column_profiles[i]["non_negative"] is True]
+                [
+                    i
+                    for i in num_cols
+                    if self.column_profiles[i]["non_negative"] is True
+                ],
             ),
         ]
         report.loc[4] = [
             "non_positive_colums",
             str(
-                [i for i in num_cols if self.column_profiles[i]["non_positive"] is True]
+                [
+                    i
+                    for i in num_cols
+                    if self.column_profiles[i]["non_positive"] is True
+                ],
             ),
         ]
 
@@ -418,7 +426,9 @@ class DatasetProfiler:
         xp_nan = self.prepro.transform_missing(self.reduced_data_sample)
 
         data_tests["is_greater_than"] = column_a_greater_than_b(
-            self.reduced_data_sample, self.column_types, t=0.95
+            self.reduced_data_sample,
+            self.column_types,
+            t=0.95,
         )
 
         print("Finding bi-variate tests...")
@@ -489,7 +499,8 @@ class DatasetProfiler:
             overwrite_existing=True,
         )
         batch = ge.dataset.PandasDataset(
-            self.data_sample.reset_index(), expectation_suite=suite
+            self.data_sample.reset_index(),
+            expectation_suite=suite,
         )
 
         cat_cols = [
