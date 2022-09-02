@@ -317,7 +317,7 @@ class DatasetProfiler:
 
     def dataset_profiler(self):
 
-        duplicates = self.reduced_data_sample.duplicated() is True
+        duplicates = self.reduced_data_sample.duplicated()
         if len(duplicates > 0):
             duplicates_percentage = (
                 self.reduced_data_sample[duplicates].shape[0]
