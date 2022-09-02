@@ -7,9 +7,9 @@ from structured_data_profiling.profiler import DatasetProfiler
     [
         (
             pytest.lazy_fixture("lending"),
-            "./test/resources/datasets/lending/lending.csv",
+            "./tests/resources/datasets/lending/lending.csv",
         ),
-        (pytest.lazy_fixture("adult"), "./test/resources/datasets/adult/uci_adult.csv"),
+        (pytest.lazy_fixture("adult"), "./tests/resources/datasets/adult/uci_adult.csv"),
     ],
 )
 def test_import(data_path):
@@ -24,9 +24,9 @@ def test_import(data_path):
     [
         (
             pytest.lazy_fixture("lending"),
-            "./test/resources/datasets/lending/lending.csv",
+            "./tests/resources/datasets/lending/lending.csv",
         ),
-        (pytest.lazy_fixture("adult"), "./test/resources/datasets/adult/uci_adult.csv"),
+        (pytest.lazy_fixture("adult"), "./tests/resources/datasets/adult/uci_adult.csv"),
     ],
 )
 def test_profile(data_path):

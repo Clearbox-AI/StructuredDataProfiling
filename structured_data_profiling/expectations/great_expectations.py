@@ -19,7 +19,7 @@ def add_column_expectations(batch, col_profiles):
                     binary_sum (str): Binary string of the sum of a and b
     """
     for i in col_profiles:
-        if col_profiles[i]['type'] == "number" and col_profiles[i]['na_frac'] < 1.0:
+        if col_profiles[i]["type"] == "number" and col_profiles[i]["na_frac"] < 1.0:
 
             batch.expect_column_values_to_be_between(
                 i,
@@ -36,9 +36,11 @@ def add_column_expectations(batch, col_profiles):
                 col_profiles[i]["std"] - col_profiles[i]["std"] * 0.3,
                 col_profiles[i]["std"] + col_profiles[i]["std"] * 0.3,
             )
-        elif col_profiles[i]['type'] == "string" \
-                and col_profiles[i]['na_frac'] < 1.0 \
-                and col_profiles[i]['n_unique'] > 1:
+        elif (
+            col_profiles[i]["type"] == "string"
+            and col_profiles[i]["na_frac"] < 1.0
+            and col_profiles[i]["n_unique"] > 1
+        ):
             batch.expect_column_most_common_value_to_be_in_set(
                 i,
                 col_profiles[i]["most_frequent"],
@@ -61,13 +63,15 @@ def add_conditional_expectations(batch, test_list, prepro, rare_labels):
         if str(batch[feat2].dtype) not in ["object", "bool"]:
             interval = create_interval(test[1])
             parse_arg = (
-                    "`" + feat2
-                    + "`>"
-                    + str(interval[0])
-                    + " and "
-                    + "`" + feat2
-                    + "`<"
-                    + str(interval[1])
+                "`"
+                + feat2
+                + "`>"
+                + str(interval[0])
+                + " and "
+                + "`"
+                + feat2
+                + "`<"
+                + str(interval[1])
             )
         else:
             value2 = test[1].replace(feat2 + "_", "")
@@ -104,10 +108,11 @@ def add_conditional_expectations(batch, test_list, prepro, rare_labels):
 def column_greater_than(data_batch, column_list):
 
     for test_i in column_list:
-        data_batch.expect_column_pair_values_A_to_be_greater_than_B(column_A=test_i[0], column_B=test_i[1])
+        data_batch.expect_column_pair_values_A_to_be_greater_than_B(
+            column_A=test_i[0], column_B=test_i[1]
+        )
 
     return data_batch
-
 
     # TO DO
     # e2 = batch.expect_column_pair_values_A_to_be_greater_than_B('loan_amount', 'fico_average')

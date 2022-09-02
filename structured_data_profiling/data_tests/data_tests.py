@@ -61,7 +61,7 @@ def find_deterministic_columns_binary(df, binary):
         )
 
         text = export_text(clf, feature_names=list(df[numerical_cols].columns))
-        #print(export_text(clf, decimals=4))
+        # print(export_text(clf, decimals=4))
         print(i, text, score)
         #
         # print(float(text.split('|')[-3].split('>')[-1]))
@@ -145,7 +145,7 @@ def get_features_correlation(X):
         return np.sqrt(phi2corr / min((kcorr - 1), (rcorr - 1)))
 
     features_correlation = pd.DataFrame(index=X.columns, columns=X.columns)
-    print('Calculating correlation matrix:')
+    print("Calculating correlation matrix:")
     Xsample = copy.deepcopy(X)
     if X.shape[1] > 100:
         n = 500
@@ -155,7 +155,9 @@ def get_features_correlation(X):
     Xsample = Xsample.sample(n=samples)
     for feature_i in tqdm(Xsample.columns):
         for feature_j in Xsample.columns:
-            confusion_matrix = pd.crosstab(Xsample[feature_i].fillna(0), Xsample[feature_j].fillna(0))
+            confusion_matrix = pd.crosstab(
+                Xsample[feature_i].fillna(0), Xsample[feature_j].fillna(0)
+            )
 
             features_correlation[feature_i].loc[feature_j] = float(
                 round(_cramers_corrected_stat(confusion_matrix), 4),
@@ -189,16 +191,16 @@ def get_label_correlation(
     return corr
 
 
-def column_a_greater_than_b(x, column_types, t=1.):
-    num_cols = [i for i in x.columns if column_types[i] == 'number']
+def column_a_greater_than_b(x, column_types, t=1.0):
+    num_cols = [i for i in x.columns if column_types[i] == "number"]
     comp_matrix = dict()
     for i in tqdm(num_cols):
         for j in num_cols:
-            d = (x[i]-x[j]).dropna()
+            d = (x[i] - x[j]).dropna()
             std = 1.0 * x[i].std()
-            p = (d >= 0).sum()/d.shape[0]
-            d_range = (np.abs(d) < std).sum()/d.shape[0]
-            if i != j and p >= t and d_range >= t and d.shape[0]/x.shape[0] > 0.1:
-                comp_matrix[i, j] = (d >= 0).sum()/d.shape[0]
+            p = (d >= 0).sum() / d.shape[0]
+            d_range = (np.abs(d) < std).sum() / d.shape[0]
+            if i != j and p >= t and d_range >= t and d.shape[0] / x.shape[0] > 0.1:
+                comp_matrix[i, j] = (d >= 0).sum() / d.shape[0]
 
     return comp_matrix
