@@ -1,12 +1,27 @@
-import numpy as np
-import pandas as pd
 import copy
 import pickle
-from structured_data_profiling.preprocessor import Preprocessor
-from structured_data_profiling.data_tests import *
+
+import numpy as np
+import pandas as pd
 from tqdm import tqdm
-from structured_data_profiling.expectations import *
-from structured_data_profiling.utils import *
+
+from structured_data_profiling.data_tests import (
+    check_precision,
+    column_a_greater_than_b,
+    find_deterministic_columns_binary,
+    find_deterministic_columns_regression,
+    fit_distributions,
+    get_features_correlation,
+    get_label_correlation,
+    identify_dates,
+)
+from structured_data_profiling.expectations import (
+    add_column_expectations,
+    add_conditional_expectations,
+    column_greater_than,
+)
+from structured_data_profiling.preprocessor import Preprocessor
+from structured_data_profiling.utils import reduce_dataframe
 
 
 class DatasetProfiler:
@@ -37,7 +52,8 @@ class DatasetProfiler:
         sequence_index : str, optional
             name of the column from the CSV containing a sequence index.
         target : str, optional
-            name of the column from the CSV containing a supervised learning target variable.
+            name of the column from the CSV containing a supervised learning target
+            variable.
         compression : :obj:`int`, optional
             Description of `param3`.
 
@@ -70,7 +86,7 @@ class DatasetProfiler:
         contains_sequence = False
 
         if n_samples is None:
-            n_samples = int(0.1*df.shape[0])
+            n_samples = int(0.1 * df.shape[0])
 
         samples = np.random.choice(df.shape[0], min(n_samples, df.shape[0]))
         self.n_samples = n_samples
@@ -84,9 +100,14 @@ class DatasetProfiler:
         self.reduced_data_sample = copy.deepcopy(self.data_sample)
 
         if self.primary_key:
-            sequence_data = self.reduced_data_sample.groupby(primary_key).count().max(axis=1).value_counts()
+            sequence_data = (
+                self.reduced_data_sample.groupby(primary_key)
+                .count()
+                .max(axis=1)
+                .value_counts()
+            )
             if list(sequence_data.keys())[0] == 1:
-                print('Identified sequential data.')
+                print("Identified sequential data.")
                 contains_sequence = True
                 self.sequence_index = sequence_index
 
@@ -96,9 +117,11 @@ class DatasetProfiler:
                     self.sequence_index,
                     axis=1,
                 )
-            self.dataset_profile['sequence_length'] = sequence_data
+            self.dataset_profile["sequence_length"] = sequence_data
 
-            self.reduced_data_sample = self.reduced_data_sample.groupby(primary_key).nth(0)
+            self.reduced_data_sample = self.reduced_data_sample.groupby(
+                primary_key,
+            ).nth(0)
 
         if (self.primary_key is not None) and (contains_sequence is False):
             self.reduced_data_sample = self.reduced_data_sample.drop(
@@ -106,8 +129,11 @@ class DatasetProfiler:
                 axis=1,
             )
 
-        print('Identifying data types...')
-        types = ["string" if i in ["object", "bool"] else "number" for i in self.reduced_data_sample.dtypes]
+        print("Identifying data types...")
+        types = [
+            "string" if i in ["object", "bool"] else "number"
+            for i in self.reduced_data_sample.dtypes
+        ]
 
         self.column_types = dict(zip(list(self.reduced_data_sample.columns), types))
 
@@ -127,14 +153,14 @@ class DatasetProfiler:
         # data_tests["ordinal_columns_tests"] = ordinal_columns
         if contains_sequence is True:
             self.sequence = True
-            print('Dataset contains sequential data')
+            print("Dataset contains sequential data")
         else:
             self.sequence = False
         return
 
     def profile(self, tol: float = 1e-6):
 
-        self.column_profiler(self.reduced_data_sample,fit_distribution=False)
+        self.column_profiler(self.reduced_data_sample, fit_distribution=False)
 
         self.reduced_data_sample = reduce_dataframe(
             self.reduced_data_sample,
@@ -159,7 +185,7 @@ class DatasetProfiler:
     ):
 
         self.column_profiles = {}
-        print('Profiling columns:')
+        print("Profiling columns:")
         for i in tqdm(data.columns):
 
             loc_dict = {
@@ -167,7 +193,7 @@ class DatasetProfiler:
                 "n_unique": data[i].nunique(),
                 "na_frac": data[i].isna().sum() / data.shape[0],
                 "n_unique_to_shape": data[i].nunique() / data[i].shape[0],
-                "distribution": 'N/A',
+                "distribution": "N/A",
             }
 
             if self.column_types[i] == "number":
@@ -194,7 +220,7 @@ class DatasetProfiler:
                         loc_dict["distribution"] = fit_distributions(
                             data[i].sample(n=min(1000, data.shape[0])),
                         )
-                    except:
+                    except Exception:
                         loc_dict[
                             "distribution"
                         ] = "Could not fit uni-variate distribution"
@@ -214,12 +240,12 @@ class DatasetProfiler:
                 elif loc_dict["n_unique"] <= 1:
                     loc_dict["distribution"] = "unique_value"
                     loc_dict["most_frequent"] = [
-                        'N/A',
-                        'N/A',
+                        "N/A",
+                        "N/A",
                     ]
                     loc_dict["least_frequent"] = [
-                        'N/A',
-                        'N/A',
+                        "N/A",
+                        "N/A",
                     ]
                 else:
                     loc_dict["distribution"] = "N/A"
@@ -260,12 +286,12 @@ class DatasetProfiler:
                 elif loc_dict["n_unique"] <= 1:
                     loc_dict["distribution"] = "unique_value"
                     loc_dict["most_frequent"] = [
-                        'N/A',
-                        'N/A',
+                        "N/A",
+                        "N/A",
                     ]
                     loc_dict["least_frequent"] = [
-                        'N/A',
-                        'N/A',
+                        "N/A",
+                        "N/A",
                     ]
                 else:
                     loc_dict["distribution"] = "Categorical"
@@ -291,60 +317,90 @@ class DatasetProfiler:
 
     def dataset_profiler(self):
 
-        duplicates = self.reduced_data_sample.duplicated() == True
+        duplicates = self.reduced_data_sample.duplicated()
         if len(duplicates > 0):
             duplicates_percentage = (
-                self.reduced_data_sample[
-                    duplicates
-                ].shape[0]
+                self.reduced_data_sample[duplicates].shape[0]
                 / self.reduced_data_sample.shape[0]
                 * 100
             )
         else:
-            duplicates_percentage = 0.
-        to_drop = [i for i in self.reduced_data_sample.columns if self.column_types[i] == 'string/date']
-        correlations = get_features_correlation(self.reduced_data_sample.drop(to_drop, axis=1))
+            duplicates_percentage = 0.0
+        to_drop = [
+            i
+            for i in self.reduced_data_sample.columns
+            if self.column_types[i] == "string/date"
+        ]
+        correlations = get_features_correlation(
+            self.reduced_data_sample.drop(to_drop, axis=1),
+        )
         self.dataset_profile["number_of_duplicates"] = duplicates_percentage
         self.dataset_profile["correlation_matrix"] = correlations
 
         return
 
     def summary(self):
-        report = pd.DataFrame(columns=['profiling_type', 'outcome'])
+        report = pd.DataFrame(columns=["profiling_type", "outcome"])
         num_cols = [
-            i for i in self.column_profiles if self.column_profiles[i]["type"] == 'number'
+            i
+            for i in self.column_profiles
+            if self.column_profiles[i]["type"] == "number"
         ]
+        """
         cat_cols = [
-            i for i in self.column_profiles if self.column_profiles[i]["type"] == 'string'
+            i
+            for i in self.column_profiles
+            if self.column_profiles[i]["type"] == "string"
         ]
-        string_dates = [i for i in self.column_types.keys() if self.column_types[i] == 'string/date']
+        """
+        string_dates = [
+            i for i in self.column_types.keys() if self.column_types[i] == "string/date"
+        ]
         timestamps = [
-            i for i in self.column_types.keys() if self.column_types[i] in [
-                'number/timestamps',
-                'number/timestamps_ms',
+            i
+            for i in self.column_types.keys()
+            if self.column_types[i]
+            in [
+                "number/timestamps",
+                "number/timestamps_ms",
             ]
         ]
-        report.loc[0] = ['column_types', {"numerical_columns": "num_cols", "categorical_columns": "cat_cols"}]
-        report.loc[1] = ['datetime_columns', string_dates + timestamps]
+        report.loc[0] = [
+            "column_types",
+            {"numerical_columns": "num_cols", "categorical_columns": "cat_cols"},
+        ]
+        report.loc[1] = ["datetime_columns", string_dates + timestamps]
         report.loc[2] = [
-            'duplicate_rows',
-            self.dataset_profile['number_of_duplicates'],
+            "duplicate_rows",
+            self.dataset_profile["number_of_duplicates"],
         ]
         report.loc[3] = [
-            'non_negative_colums',
-            str([i for i in num_cols if self.column_profiles[i]["non_negative"] is True]),
+            "non_negative_colums",
+            str(
+                [
+                    i
+                    for i in num_cols
+                    if self.column_profiles[i]["non_negative"] is True
+                ],
+            ),
         ]
         report.loc[4] = [
-            'non_positive_colums',
-            str([i for i in num_cols if self.column_profiles[i]["non_positive"] is True]),
+            "non_positive_colums",
+            str(
+                [
+                    i
+                    for i in num_cols
+                    if self.column_profiles[i]["non_positive"] is True
+                ],
+            ),
         ]
 
         # dp.dataset_profile['correlation_matrix']
-        cols = self.dataset_profile['correlation_matrix'].columns
-        a = self.dataset_profile['correlation_matrix'].values - np.eye(
-            self.dataset_profile['correlation_matrix'].shape[0],
+        cols = self.dataset_profile["correlation_matrix"].columns
+        a = self.dataset_profile["correlation_matrix"].values - np.eye(
+            self.dataset_profile["correlation_matrix"].shape[0],
         )
-        indeces = np.triu_indices(self.dataset_profile['correlation_matrix'].shape[0])
+        indeces = np.triu_indices(self.dataset_profile["correlation_matrix"].shape[0])
         z = np.dstack((indeces[0], indeces[1]))
 
         list_corr = [(cols[i[0]], cols[i[1]]) for i in z[0] if a[i[0], i[1]] > 0.6]
@@ -352,10 +408,14 @@ class DatasetProfiler:
 
         del a
 
-        report.loc[5] = ['highly correlated columns (>60%)', list_corr]
-        report.loc[6] = ['highly correlated columns (>80%)', list_corr1]
-        unique = [i for i in self.column_profiles.keys() if self.column_profiles[i]['distribution'] == 'unique_value']
-        report.loc[7] = ['Columns containing unique values', unique]
+        report.loc[5] = ["highly correlated columns (>60%)", list_corr]
+        report.loc[6] = ["highly correlated columns (>80%)", list_corr1]
+        unique = [
+            i
+            for i in self.column_profiles.keys()
+            if self.column_profiles[i]["distribution"] == "unique_value"
+        ]
+        report.loc[7] = ["Columns containing unique values", unique]
 
         return report
 
@@ -365,9 +425,13 @@ class DatasetProfiler:
         xp = self.prepro.transform(self.reduced_data_sample)
         xp_nan = self.prepro.transform_missing(self.reduced_data_sample)
 
-        data_tests["is_greater_than"] = column_a_greater_than_b(self.reduced_data_sample, self.column_types, t=0.95)
+        data_tests["is_greater_than"] = column_a_greater_than_b(
+            self.reduced_data_sample,
+            self.column_types,
+            t=0.95,
+        )
 
-        print('Finding bi-variate tests...')
+        print("Finding bi-variate tests...")
         bivariate_tests = get_label_correlation(
             xp,
             self.prepro.cat_cols,
@@ -375,7 +439,7 @@ class DatasetProfiler:
             delta_tr=0.05,
         )
         data_tests["bivariate_tests"] = bivariate_tests
-        print('Finding missing-values tests...')
+        print("Finding missing-values tests...")
 
         missing_values_tests = get_label_correlation(
             xp_nan,
@@ -384,14 +448,16 @@ class DatasetProfiler:
             delta_tr=0.05,
         )
         data_tests["missing_values_tests"] = missing_values_tests
-
+        """
         cat_columns = self.reduced_data_sample.columns[
             self.reduced_data_sample.dtypes == "object"
         ]
+        """
 
         # for i in self.ordinal_columns.keys():
         #     for j in self.ordinal_columns[i].keys():
-        #         self.reduced_data_sample[i] = self.reduced_data_sample[i].replace(j, self.ordinal_columns[i][j])
+        #         self.reduced_data_sample[i] = self.reduced_data_sample[i].replace(j,
+        #         self.ordinal_columns[i][j])
         samples = np.random.choice(
             self.reduced_data_sample.shape[0],
             min(self.n_samples, self.reduced_data_sample.shape[0]),
@@ -405,7 +471,7 @@ class DatasetProfiler:
             if self.column_profiles[i]["distribution"] == "Bernoulli"
         ]
         #
-        print('Finding threshold columns...')
+        print("Finding threshold columns...")
 
         deterministic_columns_binary, num_cols = find_deterministic_columns_binary(
             self.reduced_data_sample,
@@ -414,7 +480,7 @@ class DatasetProfiler:
         data_tests["deterministic_columns_binary"] = deterministic_columns_binary
 
         to_drop = [i[0] for i in deterministic_columns_binary]
-        print('Finding linear combinations...')
+        print("Finding linear combinations...")
 
         self.reduced_data_sample = self.reduced_data_sample.drop(to_drop, axis=1)
         linear_combinations, num_cols = find_deterministic_columns_regression(
@@ -432,7 +498,10 @@ class DatasetProfiler:
             "local_suite",
             overwrite_existing=True,
         )
-        batch = ge.dataset.PandasDataset(self.data_sample.reset_index(), expectation_suite=suite)
+        batch = ge.dataset.PandasDataset(
+            self.data_sample.reset_index(),
+            expectation_suite=suite,
+        )
 
         cat_cols = [
             i

@@ -1,20 +1,31 @@
-import pandas as pd
 import copy
+
 import dateparser
+import pandas as pd
 
 
 class Preprocessor:
     def __init__(self, column_types, n_bins=5):
 
-        self.num = [i for i in column_types.keys() if column_types[i] == 'number'] #x.columns[x.dtypes != "object"]
+        self.num = [
+            i for i in column_types.keys() if column_types[i] == "number"
+        ]  # x.columns[x.dtypes != "object"]
         self.cat_cols = None
         self.nan_cols = None
-        self.date_cols = [i for i in column_types.keys() if column_types[i] == 'string/date']
-        self.date_cols_ts = [i for i in column_types.keys() if column_types[i] == 'number/timestamp']
-        self.date_cols_ts_ms = [i for i in column_types.keys() if column_types[i] == 'number/timestamp_ms']
+        self.date_cols = [
+            i for i in column_types.keys() if column_types[i] == "string/date"
+        ]
+        self.date_cols_ts = [
+            i for i in column_types.keys() if column_types[i] == "number/timestamp"
+        ]
+        self.date_cols_ts_ms = [
+            i for i in column_types.keys() if column_types[i] == "number/timestamp_ms"
+        ]
 
         self.bins = n_bins
-        self.cat = [i for i in column_types.keys() if column_types[i] in ['number', 'string']]
+        self.cat = [
+            i for i in column_types.keys() if column_types[i] in ["number", "string"]
+        ]
 
     def transform(self, x_in):
         x = copy.deepcopy(x_in)
@@ -24,14 +35,16 @@ class Preprocessor:
         num = [i for i in x_in.columns if i in self.num]
         for i in num:
             x[i] = pd.cut(
-                x[i], bins=min(self.bins, x[i].nunique()), right=False,
+                x[i],
+                bins=min(self.bins, x[i].nunique()),
+                right=False,
             ).astype(str)
 
         cat = [i for i in x_in.columns if i in self.cat]
         for i in cat:
             xc = pd.get_dummies(x[i], prefix=i)
-            if i+"_nan" in list(xc.columns):
-                xc = xc.drop([i+"_nan"], axis=1)
+            if i + "_nan" in list(xc.columns):
+                xc = xc.drop([i + "_nan"], axis=1)
             cat_cols[i] = list(xc.columns)
 
             xproc = pd.concat([xproc, xc], axis=1)
@@ -42,14 +55,14 @@ class Preprocessor:
 
             date_col = [dateparser.parse(str(x[i].iloc[j])) for j in range(x.shape[0])]
             day = [j.weekday() for j in date_col]
-            #weekend = [j.weekday() >= 5 for j in date_col]
+            # weekend = [j.weekday() >= 5 for j in date_col]
             month = [j.month for j in date_col]
             hour = [j.hour for j in date_col]
 
-            xc1 = pd.get_dummies(day, prefix=i+'day')
-            #xc2 = pd.get_dummies(weekend, prefix=i+'weekend')
-            xc3 = pd.get_dummies(month, prefix=i+'month')
-            xc4 = pd.get_dummies(hour, prefix=i+'hour')
+            xc1 = pd.get_dummies(day, prefix=i + "day")
+            # xc2 = pd.get_dummies(weekend, prefix=i+'weekend')
+            xc3 = pd.get_dummies(month, prefix=i + "month")
+            xc4 = pd.get_dummies(hour, prefix=i + "hour")
 
             if "nan" in list(xc1.columns):
                 xc1 = xc1.drop(["nan"], axis=1)
@@ -67,7 +80,7 @@ class Preprocessor:
 
             xproc = pd.concat([xproc.reset_index(drop=True), xc1, xc3, xc4], axis=1)
 
-        #t1 = dateparser.parse(X['pickup_datetime'].iloc[i])
+        # t1 = dateparser.parse(X['pickup_datetime'].iloc[i])
         self.cat_cols = cat_cols
 
         return xproc

@@ -1,4 +1,5 @@
 import pytest
+
 from structured_data_profiling.profiler import DatasetProfiler
 
 
@@ -7,9 +8,12 @@ from structured_data_profiling.profiler import DatasetProfiler
     [
         (
             pytest.lazy_fixture("lending"),
-            "./test/resources/datasets/lending/lending.csv",
+            "./tests/resources/datasets/lending/lending.csv",
         ),
-        (pytest.lazy_fixture("adult"), "./test/resources/datasets/adult/uci_adult.csv"),
+        (
+            pytest.lazy_fixture("adult"),
+            "./tests/resources/datasets/adult/uci_adult.csv",
+        ),
     ],
 )
 def test_import(data_path):
@@ -24,14 +28,17 @@ def test_import(data_path):
     [
         (
             pytest.lazy_fixture("lending"),
-            "./test/resources/datasets/lending/lending.csv",
+            "./tests/resources/datasets/lending/lending.csv",
         ),
-        (pytest.lazy_fixture("adult"), "./test/resources/datasets/adult/uci_adult.csv"),
+        (
+            pytest.lazy_fixture("adult"),
+            "./tests/resources/datasets/adult/uci_adult.csv",
+        ),
     ],
 )
 def test_profile(data_path):
     dp = DatasetProfiler(data_path[1])
     dp.profile()
-#    dp.warnings()
+    #    dp.warnings()
     assert dp.reduced_data_sample.shape[0] > 0
     assert dp.reduced_data_sample.shape[1] > 0

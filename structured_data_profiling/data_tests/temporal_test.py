@@ -1,8 +1,9 @@
-from functools import reduce
-import numpy as np
-import dateparser
-from datetime import datetime
 import copy
+from datetime import datetime
+from functools import reduce
+
+import dateparser
+import numpy as np
 
 
 def identify_dates(data, n_samples=10):
@@ -76,7 +77,7 @@ def sequence_profiles(df, sequence_index, primary_key):
         for i in seq_idxs:
             try:
                 w = dateparser.parse(str(i), region="EU").timestamp()
-            except:
+            except Exception:
                 w = None
 
             seq_tmsp.append(w)

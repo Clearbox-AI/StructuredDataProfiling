@@ -1,5 +1,6 @@
-import numpy as np
 from collections import defaultdict
+
+import numpy as np
 
 
 def lists_to_dict(a, b):
@@ -49,7 +50,8 @@ def reduce_dataframe(
     too_much_info = [
         [i, column_profiles[i]["rare_labels (<5% frequency)"]]
         for i in cat_cols
-        if len(column_profiles[i]["rare_labels (<5% frequency)"]) > 0 and i not in unique+high_cardinality
+        if len(column_profiles[i]["rare_labels (<5% frequency)"]) > 0
+        and i not in unique + high_cardinality
     ]
 
     for i in too_much_info:
