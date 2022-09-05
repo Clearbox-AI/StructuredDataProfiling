@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "structured-profiling"
-version = "0.1.4"
+version = "0.1.4.5"
 description = "A Python library to check for data quality and automatically generate data tests. "
 authors = ["Clearbox AI <info@clearbox.ai>"]
 license = "GPL"
