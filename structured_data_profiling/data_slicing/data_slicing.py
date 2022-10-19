@@ -10,14 +10,14 @@ def create_interval(string: str):
     return float(bounds[0]), float(bounds[1])
 
 
-def feature_importance(data, target, task='classification'):
+def feature_importance(data, target, task="classification"):
 
     X = copy.deepcopy(data)
     X = X.drop(target, axis=1)
     y = data[target]
 
-    num_cols = X.columns[X.dtypes != 'object']
-    cat_cols = X.columns[X.dtypes == 'object']
+    num_cols = X.columns[X.dtypes != "object"]
+    cat_cols = X.columns[X.dtypes == "object"]
     Xprepro = pd.DataFrame()
 
     for i in cat_cols:
@@ -26,7 +26,7 @@ def feature_importance(data, target, task='classification'):
 
     for i in num_cols:
         Xprepro[i] = X[i]
-    if task == 'classification':
+    if task == "classification":
         clf = RandomForestClassifier(max_depth=1, n_estimators=50).fit(Xprepro, y)
     else:
         clf = RandomForestRegressor(max_depth=1, n_estimators=50).fit(Xprepro, y)
@@ -41,26 +41,30 @@ def find_slices(X, columns):
 
     for i in columns:
         feat2 = i
-        if X[i].dtype != 'object':
+        if X[i].dtype != "object":
             # intervals = pd.cut(X[feat2],3,right=False).astype(str).unique()
-            intervals = list(pd.cut(X[feat2], 3, right=False).cat.categories.astype(str))
+            intervals = list(
+                pd.cut(X[feat2], 3, right=False).cat.categories.astype(str),
+            )
             parse_column = []
             for j in range(len(intervals)):
 
                 interval = create_interval(intervals[j])
                 if j == 0:
-                    sym = '>='
+                    sym = ">="
                 else:
-                    sym = '>'
+                    sym = ">"
                 parse_arg = (
-                        "`" + feat2
-                        + "`" + sym
-                        + str(interval[0])
-                        + " and "
-                        + "`" + feat2
-                        + "`<="
-                        + str(interval[1])
-
+                    "`"
+                    + feat2
+                    + "`"
+                    + sym
+                    + str(interval[0])
+                    + " and "
+                    + "`"
+                    + feat2
+                    + "`<="
+                    + str(interval[1])
                 )
                 parse_column.append(parse_arg)
             parse_conditions.append(parse_column)
@@ -68,17 +72,14 @@ def find_slices(X, columns):
             cats = X[feat2].unique()
             parse_column = []
             for j in cats:
-                parse_arg = (
-                        "`" + feat2
-                        + "`=="
-                        + "'" + str(j) + "'")
+                parse_arg = "`" + feat2 + "`==" + "'" + str(j) + "'"
 
                 parse_column.append(parse_arg)
             parse_conditions.append(parse_column)
 
     slices = list(itertools.product(*parse_conditions))
 
-    return [' and '.join(l) for l in slices]
+    return [" and ".join(l) for l in slices]
 
 
 def check_column_balance(X, target=None):

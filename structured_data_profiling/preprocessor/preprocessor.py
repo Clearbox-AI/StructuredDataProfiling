@@ -46,8 +46,8 @@ class Preprocessor:
             if i + "_nan" in list(xc.columns):
                 xc = xc.drop([i + "_nan"], axis=1)
 
-            if i+"_Grouped_labels" in list(xc.columns):
-                xc = xc.drop([i+"_Grouped_labels"], axis=1)
+            if i + "_Grouped_labels" in list(xc.columns):
+                xc = xc.drop([i + "_Grouped_labels"], axis=1)
 
             cat_cols[i] = list(xc.columns)
 

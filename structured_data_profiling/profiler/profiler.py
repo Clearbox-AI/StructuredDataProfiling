@@ -49,9 +49,9 @@ class DatasetProfiler:
         protected_attributes: List = [],
         n_samples: int = None,
         compression: str = None,
-        separator: str = ',',
+        separator: str = ",",
         thousands: str = None,
-        decimals: str = '.',
+        decimals: str = ".",
     ):
         """
 
@@ -70,11 +70,13 @@ class DatasetProfiler:
             Description of `param3`.
 
         """
-        df = pd.read_csv(df_path,
-                         compression=compression,
-                         sep=separator,
-                         decimal=decimals,
-                         thousands=thousands)
+        df = pd.read_csv(
+            df_path,
+            compression=compression,
+            sep=separator,
+            decimal=decimals,
+            thousands=thousands,
+        )
 
         self.path = df_path
 
@@ -165,7 +167,9 @@ class DatasetProfiler:
         self.prepro = None
         self.data_slices = None
 
-        cat_columns = self.reduced_data_sample.columns[self.reduced_data_sample.dtypes == 'object']
+        cat_columns = self.reduced_data_sample.columns[
+            self.reduced_data_sample.dtypes == "object"
+        ]
 
         ordinal_columns = find_ordinal_columns(
             self.reduced_data_sample,

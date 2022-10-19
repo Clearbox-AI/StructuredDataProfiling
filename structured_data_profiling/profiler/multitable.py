@@ -10,14 +10,14 @@ class MultiTableProfiler:
     """
 
     def __init__(
-            self,
-            relational_metadata: Dict,
-            target: Dict = None,
-            n_samples: int = 10000,
-            compression: str = None,
-            separator: str = ',',
-            thousands: str = None,
-            decimals: str = '.',
+        self,
+        relational_metadata: Dict,
+        target: Dict = None,
+        n_samples: int = 10000,
+        compression: str = None,
+        separator: str = ",",
+        thousands: str = None,
+        decimals: str = ".",
     ):
         """
 
@@ -36,21 +36,24 @@ class MultiTableProfiler:
 
         """
 
-        self.io_meta = {'compression': compression,
-                        'separator': separator,
-                        'thousands': thousands,
-                        'decimals': decimals,
-                        }
+        self.io_meta = {
+            "compression": compression,
+            "separator": separator,
+            "thousands": thousands,
+            "decimals": decimals,
+        }
 
         tables = {}
         try:
             for i in relational_metadata.keys():
                 print(i, len(relational_metadata[i]))
-                table_i = pd.read_csv(relational_metadata[i][0],
-                                      compression=compression,
-                                      sep=separator,
-                                      decimal=decimals,
-                                      thousands=thousands)
+                table_i = pd.read_csv(
+                    relational_metadata[i][0],
+                    compression=compression,
+                    sep=separator,
+                    decimal=decimals,
+                    thousands=thousands,
+                )
 
                 table_i.index = table_i[relational_metadata[i][1]]
                 table_i = table_i.drop(relational_metadata[i][1], axis=1)
@@ -74,14 +77,17 @@ class MultiTableProfiler:
                     completed.append(i)
                     to_process.remove(i)
                 else:
-                    foreign_dfs = [relational_metadata[i][2 + 2 * j] for j in range(int(len_meta) - 1)]
+                    foreign_dfs = [
+                        relational_metadata[i][2 + 2 * j]
+                        for j in range(int(len_meta) - 1)
+                    ]
                     if all(elem in completed for elem in foreign_dfs):
                         completed.append(i)
                         to_process.remove(i)
             w += 1
 
         if w > 99:
-            print('Could not build relational DAG, please check foreign keys provided')
+            print("Could not build relational DAG, please check foreign keys provided")
             return
 
         metadata_merging = {}
@@ -91,10 +97,12 @@ class MultiTableProfiler:
                 df = tables[i]
                 columns = list(df.columns)
                 for j in range(int(len_meta) - 1):
-                    df = df.join(tables[relational_metadata[i][2 + 2 * j]],
-                                 # lsuffix='_l_'+i,
-                                 rsuffix='_r_' + relational_metadata[i][2 + 2 * j],
-                                 on=relational_metadata[i][3 + 2 * j])
+                    df = df.join(
+                        tables[relational_metadata[i][2 + 2 * j]],
+                        # lsuffix='_l_'+i,
+                        rsuffix="_r_" + relational_metadata[i][2 + 2 * j],
+                        on=relational_metadata[i][3 + 2 * j],
+                    )
                     df = df.drop(relational_metadata[i][3 + 2 * j], axis=1)
 
                 tables[i] = df.sample(min(n_samples, df.shape[0]))
