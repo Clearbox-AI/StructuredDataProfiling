@@ -131,3 +131,7 @@ dmypy.json
 
 # VS Code
 .vscode
+
+# Great Expectations
+
+/examples/great_expectations

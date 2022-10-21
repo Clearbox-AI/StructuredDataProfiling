@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "structured-profiling"
 version = "0.1.4.5"
-description = "A Python library to check for data quality and automatically generate data tests. "
+cladescription = "A Python library to check for data quality and automatically generate data tests. "
 authors = ["Clearbox AI <info@clearbox.ai>"]
 license = "GPL"
 readme = "README.md"
@@ -18,7 +18,7 @@ scipy = "~1.7.2"
 numpy = "^1.21"
 dateparser = "^1"
 distfit = "^1.4"
-great-expectations = "^0.13.41"
+great-expectations = "^0.15.21"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.3"
