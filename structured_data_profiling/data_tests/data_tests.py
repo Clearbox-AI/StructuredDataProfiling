@@ -63,7 +63,7 @@ def find_deterministic_columns_binary(df, binary):
 
         text = export_text(clf, feature_names=list(df[numerical_cols].columns))
         # print(export_text(clf, decimals=4))
-        print(i, text, score)
+        # print(i, text, score)
         #
         # print(float(text.split('|')[-3].split('>')[-1]))
         # print(float(text.split('|')[-1].split(':')[-1]))

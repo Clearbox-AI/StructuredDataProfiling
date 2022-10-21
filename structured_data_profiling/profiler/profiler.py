@@ -1,6 +1,6 @@
 import copy
 import pickle
-
+from typing import List
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -10,11 +10,19 @@ from structured_data_profiling.data_tests import (
     column_a_greater_than_b,
     find_deterministic_columns_binary,
     find_deterministic_columns_regression,
+    find_ordinal_columns,
     fit_distributions,
     get_features_correlation,
     get_label_correlation,
     identify_dates,
 )
+
+from structured_data_profiling.data_slicing import (
+    feature_importance,
+    find_slices,
+    check_column_balance,
+)
+
 from structured_data_profiling.expectations import (
     add_column_expectations,
     add_conditional_expectations,
@@ -38,8 +46,12 @@ class DatasetProfiler:
         sequence_index: str = None,
         target: str = None,
         regression: bool = False,
+        protected_attributes: List = [],
         n_samples: int = None,
         compression: str = None,
+        separator: str = ",",
+        thousands: str = None,
+        decimals: str = ".",
     ):
         """
 
@@ -58,7 +70,14 @@ class DatasetProfiler:
             Description of `param3`.
 
         """
-        df = pd.read_csv(df_path, compression=compression)
+        df = pd.read_csv(
+            df_path,
+            compression=compression,
+            sep=separator,
+            decimal=decimals,
+            thousands=thousands,
+        )
+
         self.path = df_path
 
         if primary_key is not None:
@@ -83,6 +102,7 @@ class DatasetProfiler:
             self.target = None
             self.regression = False
 
+        self.protected_attributes = protected_attributes
         contains_sequence = False
 
         if n_samples is None:
@@ -106,7 +126,7 @@ class DatasetProfiler:
                 .max(axis=1)
                 .value_counts()
             )
-            if list(sequence_data.keys())[0] == 1:
+            if len(sequence_data.keys()) > 1:
                 print("Identified sequential data.")
                 contains_sequence = True
                 self.sequence_index = sequence_index
@@ -145,12 +165,19 @@ class DatasetProfiler:
         self.column_profiles = None
 
         self.prepro = None
-        # ordinal_columns = find_ordinal_columns(
-        #     self.reduced_data_sample,
-        #     cat_columns,
-        # )
-        #
-        # data_tests["ordinal_columns_tests"] = ordinal_columns
+        self.data_slices = None
+
+        cat_columns = self.reduced_data_sample.columns[
+            self.reduced_data_sample.dtypes == "object"
+        ]
+
+        ordinal_columns = find_ordinal_columns(
+            self.reduced_data_sample,
+            cat_columns,
+        )
+
+        self.ordinal_columns = ordinal_columns
+
         if contains_sequence is True:
             self.sequence = True
             print("Dataset contains sequential data")
@@ -158,7 +185,7 @@ class DatasetProfiler:
             self.sequence = False
         return
 
-    def profile(self, tol: float = 1e-6):
+    def profile(self, tol: float = 1e-6, n_bins=5):
 
         self.column_profiler(self.reduced_data_sample, fit_distribution=False)
 
@@ -172,8 +199,13 @@ class DatasetProfiler:
         # self.rare_labels = rare_labels
         # self.unique_value = unique
 
-        self.prepro = Preprocessor(column_types=self.column_types)
+        self.prepro = Preprocessor(column_types=self.column_types, n_bins=n_bins)
         self.tests = self.data_tests()
+
+        try:
+            self.slice_data()
+        except:
+            print("Could not find data slices.")
 
         print("Profiling finished.")
         return
@@ -380,7 +412,7 @@ class DatasetProfiler:
                 [
                     i
                     for i in num_cols
-                    if self.column_profiles[i]["non_negative"] is True
+                    if self.column_profiles[i]["non_negative"] == True
                 ],
             ),
         ]
@@ -390,7 +422,7 @@ class DatasetProfiler:
                 [
                     i
                     for i in num_cols
-                    if self.column_profiles[i]["non_positive"] is True
+                    if self.column_profiles[i]["non_positive"] == True
                 ],
             ),
         ]
@@ -489,6 +521,26 @@ class DatasetProfiler:
         data_tests["linear_combinations"] = linear_combinations
 
         return data_tests
+
+    def slice_data(self):
+
+        X = copy.deepcopy(self.data_sample)
+        if self.primary_key:
+            X = X.drop(self.primary_key, axis=1)
+        c1 = check_column_balance(X, target=self.target)
+        c1 = [i[0] for i in c1]
+
+        if self.target:
+            c = feature_importance(X, self.target, self.regression)
+            c = [i[0] for i in c]
+            c1.remove(c[-1])
+            list_columns = [c1[-1], c[-1]]
+        else:
+            list_columns = [c1[-2], c1[-1]]
+
+        list_columns = list_columns + self.protected_attributes
+        slices = find_slices(X, list_columns[-2:])
+        self.data_slices = slices
 
     def generate_expectations(self, docs=True):
         import great_expectations as ge
