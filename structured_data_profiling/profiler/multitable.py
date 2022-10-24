@@ -142,7 +142,7 @@ class MultiTableProfiler:
             )
 
             dp.profile()
-            dp.generate_expectations(suite_name=str(i))
+            # dp.generate_expectations(suite_name=str(i))
 
             dp.data_sample = []
             dp.reduced_data_sample = []
