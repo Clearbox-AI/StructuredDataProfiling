@@ -173,11 +173,15 @@ class DatasetProfiler:
             self.column_types[i] = possible_dates[i]
 
         self.datetime_formats = {}
-        string_dates = [i for i in self.column_types.keys() if self.column_types[i] == 'string/date']
+        string_dates = [
+            i for i in self.column_types.keys() if self.column_types[i] == "string/date"
+        ]
 
         for i in string_dates:
             try:
-                format_time = _guess_datetime_format_for_array(self.reduced_data_sample[i].sample(10).values)
+                format_time = _guess_datetime_format_for_array(
+                    self.reduced_data_sample[i].sample(10).values,
+                )
                 self.datetime_formats[i] = format_time
             except:
                 self.datetime_formats[i] = "Could not infer datetime format"
@@ -525,14 +529,17 @@ class DatasetProfiler:
         ]
         #
         print("Finding threshold columns...")
+        try:
+            deterministic_columns_binary, num_cols = find_deterministic_columns_binary(
+                self.reduced_data_sample,
+                column_search,
+            )
+            data_tests["deterministic_columns_binary"] = deterministic_columns_binary
+            to_drop = [i[0] for i in deterministic_columns_binary]
+        except:
+            data_tests["deterministic_columns_binary"] = []
+            to_drop = []
 
-        deterministic_columns_binary, num_cols = find_deterministic_columns_binary(
-            self.reduced_data_sample,
-            column_search,
-        )
-        data_tests["deterministic_columns_binary"] = deterministic_columns_binary
-
-        to_drop = [i[0] for i in deterministic_columns_binary]
         print("Finding linear combinations...")
 
         self.reduced_data_sample = self.reduced_data_sample.drop(to_drop, axis=1)
@@ -567,7 +574,7 @@ class DatasetProfiler:
         import great_expectations as ge
 
         if suite_name is None:
-            suite_name = self.path
+            suite_name = self.path.split("/")[-1]
         data_context = ge.data_context.DataContext()
         suite = data_context.create_expectation_suite(
             suite_name,
@@ -606,8 +613,8 @@ class DatasetProfiler:
 
     def save(self, name: str):
 
-        self.data_sample = []
-        self.reduced_data_sample = []
+        # self.data_sample = []
+        # self.reduced_data_sample = []
 
         with open(name, "wb") as f:
             pickle.dump(self, f)
