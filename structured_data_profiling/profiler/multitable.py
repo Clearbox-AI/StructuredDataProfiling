@@ -1,5 +1,7 @@
 import pandas as pd
 from typing import Dict
+from structured_data_profiling.profiler import DatasetProfiler
+import pickle
 
 
 class MultiTableProfiler:
@@ -18,6 +20,7 @@ class MultiTableProfiler:
         separator: str = ",",
         thousands: str = None,
         decimals: str = ".",
+        encoding: str = None,
     ):
         """
 
@@ -35,12 +38,14 @@ class MultiTableProfiler:
             Description of `param3`.
 
         """
-
+        self.profiles = []
+        self.relational_metadata = relational_metadata
         self.io_meta = {
             "compression": compression,
             "separator": separator,
             "thousands": thousands,
             "decimals": decimals,
+            "encoding": encoding,
         }
 
         tables = {}
@@ -91,6 +96,8 @@ class MultiTableProfiler:
             return
 
         metadata_merging = {}
+        foreign_keys = {}
+
         for i in completed:
             len_meta = len(relational_metadata[i]) / 2
             if len_meta > 1:
@@ -107,16 +114,45 @@ class MultiTableProfiler:
 
                 tables[i] = df.sample(min(n_samples, df.shape[0]))
                 metadata_merging[i] = columns
+                foreign_keys[i] = relational_metadata[i][3 + 2 * j]
                 print(i, df.shape)
             else:
                 metadata_merging[i] = []
 
         self.tables = tables
         self.metadata = metadata_merging
+        self.foreign_keys = foreign_keys
 
         return
 
-    def profile(self, tol: float = 1e-6):
+    def profile(self, n_samples=10000):
+
+        for i in self.tables.keys():
+            self.tables[i].to_csv('temp.csv', index_label='index')
+            dp = DatasetProfiler('temp.csv',
+                                 primary_key='index',
+                                 #regression=self.io_meta['regression'],
+                                 n_samples=n_samples,
+                                 #compression=self.io_meta['compression'],
+                                 #separator=self.io_meta['separator'],
+                                 #decimals=self.io_meta['decimals'],
+                                 #thousands=self.io_meta['thousands'],
+                                 #encoding=self.io_meta['encoding']
+                                 )
+
+            dp.profile()
+            dp.generate_expectations(suite_name=str(i))
+
+            dp.data_sample = []
+            dp.reduced_data_sample = []
+
+            self.profiles.append(dp)
 
         print("Profiling finished.")
+
         return
+
+    def save(self, name: str):
+
+        with open(name, "wb") as f:
+            pickle.dump(self, f)

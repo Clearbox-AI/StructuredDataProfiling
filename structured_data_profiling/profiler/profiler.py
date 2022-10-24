@@ -3,6 +3,7 @@ import pickle
 from typing import List
 import numpy as np
 import pandas as pd
+from pandas.core.tools.datetimes import _guess_datetime_format_for_array
 from tqdm import tqdm
 
 from structured_data_profiling.data_tests import (
@@ -52,6 +53,7 @@ class DatasetProfiler:
         separator: str = ",",
         thousands: str = None,
         decimals: str = ".",
+        encoding: str = None,
     ):
         """
 
@@ -76,7 +78,16 @@ class DatasetProfiler:
             sep=separator,
             decimal=decimals,
             thousands=thousands,
+            encoding=encoding,
         )
+
+        self.io_meta = {
+            "compression": compression,
+            "separator": separator,
+            "thousands": thousands,
+            "decimals": decimals,
+            "encoding": encoding,
+        }
 
         self.path = df_path
 
@@ -160,6 +171,16 @@ class DatasetProfiler:
         possible_dates = identify_dates(self.reduced_data_sample)
         for i in tqdm(possible_dates.keys()):
             self.column_types[i] = possible_dates[i]
+
+        self.datetime_formats = {}
+        string_dates = [i for i in self.column_types.keys() if self.column_types[i] == 'string/date']
+
+        for i in string_dates:
+            try:
+                format_time = _guess_datetime_format_for_array(self.reduced_data_sample[i].sample(10).values)
+                self.datetime_formats[i] = format_time
+            except:
+                self.datetime_formats[i] = "Could not infer datetime format"
 
         self.tests = None
         self.column_profiles = None
@@ -542,12 +563,14 @@ class DatasetProfiler:
         slices = find_slices(X, list_columns[-2:])
         self.data_slices = slices
 
-    def generate_expectations(self, docs=True):
+    def generate_expectations(self, docs=True, suite_name=None):
         import great_expectations as ge
 
+        if suite_name is None:
+            suite_name = self.path
         data_context = ge.data_context.DataContext()
         suite = data_context.create_expectation_suite(
-            "local_suite",
+            suite_name,
             overwrite_existing=True,
         )
         batch = ge.dataset.PandasDataset(
@@ -583,8 +606,8 @@ class DatasetProfiler:
 
     def save(self, name: str):
 
-        for j, i in enumerate(self.data):
-            self.data[j] = []
+        self.data_sample = []
+        self.reduced_data_sample = []
 
         with open(name, "wb") as f:
             pickle.dump(self, f)

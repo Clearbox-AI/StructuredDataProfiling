@@ -53,6 +53,47 @@ class Preprocessor:
 
             xproc = pd.concat([xproc, xc], axis=1)
 
+        self.cat_cols = cat_cols
+
+        return xproc
+
+    def transform_missing(self, x_in):
+        x = copy.deepcopy(x_in)
+        nan_cols = {}
+        xproc = pd.DataFrame()
+        cols = self.cat + self.date_cols + self.date_cols_ts + self.date_cols_ts_ms
+        num = [i for i in x_in.columns if i in cols]
+
+        for i in num:
+            xc = x[i].isna()
+            if xc.sum() > 0:
+                nan_cols[i] = [i]
+                xproc = pd.concat([xproc, xc], axis=1)
+
+        self.nan_cols = nan_cols
+
+        return xproc
+
+
+class TimePreprocessor:
+    def __init__(self, column_types, n_bins=5):
+
+        self.cat_cols = None
+        self.date_cols = [
+            i for i in column_types.keys() if column_types[i] == "string/date"
+        ]
+        self.date_cols_ts = [
+            i for i in column_types.keys() if column_types[i] == "number/timestamp"
+        ]
+        self.date_cols_ts_ms = [
+            i for i in column_types.keys() if column_types[i] == "number/timestamp_ms"
+        ]
+
+    def transform(self, x_in):
+        x = copy.deepcopy(x_in)
+        cat_cols = {}
+        xproc = pd.DataFrame()
+
         # Datetime tests
         date_cols = [i for i in x_in.columns if i in self.date_cols]
         for i in date_cols:
@@ -84,24 +125,7 @@ class Preprocessor:
 
             xproc = pd.concat([xproc.reset_index(drop=True), xc1, xc3, xc4], axis=1)
 
-        # t1 = dateparser.parse(X['pickup_datetime'].iloc[i])
         self.cat_cols = cat_cols
 
         return xproc
-
-    def transform_missing(self, x_in):
-        x = copy.deepcopy(x_in)
-        nan_cols = {}
-        xproc = pd.DataFrame()
-        cols = self.cat + self.date_cols + self.date_cols_ts + self.date_cols_ts_ms
-        num = [i for i in x_in.columns if i in cols]
-
-        for i in num:
-            xc = x[i].isna()
-            if xc.sum() > 0:
-                nan_cols[i] = [i]
-                xproc = pd.concat([xproc, xc], axis=1)
-
-        self.nan_cols = nan_cols
-
-        return xproc
+    

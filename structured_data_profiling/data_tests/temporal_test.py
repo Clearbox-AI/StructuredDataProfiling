@@ -107,6 +107,11 @@ def sequence_profiles(df, sequence_index, primary_key):
     return sorted_seq, complete_ids
 
 
-def datetime_tests(X):
+def datetime_tests(df_in, dates):
+    X = copy.deepcopy(df_in[dates])
+    c = [(i, j) for i, j in zip(X.mean(axis=0).keys(), X.mean(axis=0).values)]
+    c.sort(key=lambda t: t[1])
+    for i in range(1, len(c)):
+        x[i] = df_in[i].apply(lambda x: pd.Timestamp(x).timestamp())
 
-    return X
+    return c
