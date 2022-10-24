@@ -119,7 +119,7 @@ class DatasetProfiler:
         if n_samples is None:
             n_samples = int(0.1 * df.shape[0])
 
-        samples = np.random.choice(df.shape[0], min(n_samples, df.shape[0]))
+        samples = np.random.choice(df.shape[0], min(n_samples, df.shape[0]), replace=False)
         self.n_samples = n_samples
         self.samples = samples
 
