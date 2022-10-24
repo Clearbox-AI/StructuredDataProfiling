@@ -51,7 +51,7 @@ class MultiTableProfiler:
         tables = {}
         try:
             for i in relational_metadata.keys():
-                print(i, len(relational_metadata[i]))
+                # print(i, len(relational_metadata[i]))
                 table_i = pd.read_csv(
                     relational_metadata[i][0],
                     compression=compression,
@@ -114,8 +114,8 @@ class MultiTableProfiler:
 
                 tables[i] = df.sample(min(n_samples, df.shape[0]))
                 metadata_merging[i] = columns
-                foreign_keys[i] = relational_metadata[i][3 + 2 * j]
-                print(i, df.shape)
+                # foreign_keys[i] = relational_metadata[i][3 + 2 * i]
+                # print(i, df.shape)
             else:
                 metadata_merging[i] = []
 
@@ -128,17 +128,18 @@ class MultiTableProfiler:
     def profile(self, n_samples=10000):
 
         for i in self.tables.keys():
-            self.tables[i].to_csv('temp.csv', index_label='index')
-            dp = DatasetProfiler('temp.csv',
-                                 primary_key='index',
-                                 #regression=self.io_meta['regression'],
-                                 n_samples=n_samples,
-                                 #compression=self.io_meta['compression'],
-                                 #separator=self.io_meta['separator'],
-                                 #decimals=self.io_meta['decimals'],
-                                 #thousands=self.io_meta['thousands'],
-                                 #encoding=self.io_meta['encoding']
-                                 )
+            self.tables[i].to_csv("temp.csv", index_label="index")
+            dp = DatasetProfiler(
+                "temp.csv",
+                primary_key="index",
+                # regression=self.io_meta['regression'],
+                n_samples=n_samples,
+                # compression=self.io_meta['compression'],
+                # separator=self.io_meta['separator'],
+                # decimals=self.io_meta['decimals'],
+                # thousands=self.io_meta['thousands'],
+                # encoding=self.io_meta['encoding']
+            )
 
             dp.profile()
             dp.generate_expectations(suite_name=str(i))
