@@ -128,4 +128,3 @@ class TimePreprocessor:
         self.cat_cols = cat_cols
 
         return xproc
-    
