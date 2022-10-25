@@ -3,7 +3,7 @@ from typing import Dict
 
 import pandas as pd
 
-from structured_data_profiling.profiler import DatasetProfiler
+from .profiler import DatasetProfiler
 
 
 class MultiTableProfiler:
