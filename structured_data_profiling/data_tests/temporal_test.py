@@ -4,6 +4,7 @@ from functools import reduce
 
 import dateparser
 import numpy as np
+import pandas as pd
 
 
 def identify_dates(data, n_samples=10):
@@ -112,6 +113,6 @@ def datetime_tests(df_in, dates):
     c = [(i, j) for i, j in zip(X.mean(axis=0).keys(), X.mean(axis=0).values)]
     c.sort(key=lambda t: t[1])
     for i in range(1, len(c)):
-        x[i] = df_in[i].apply(lambda x: pd.Timestamp(x).timestamp())
+        X[i] = df_in[i].apply(lambda x: pd.Timestamp(x).timestamp())
 
     return c

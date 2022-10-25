@@ -1,8 +1,8 @@
 import copy
-
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-import pandas as pd
 import itertools
+
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 
 def create_interval(string: str):
@@ -79,7 +79,7 @@ def find_slices(X, columns):
 
     slices = list(itertools.product(*parse_conditions))
 
-    return [" and ".join(l) for l in slices]
+    return [" and ".join(slice) for slice in slices]
 
 
 def check_column_balance(X, target=None):
@@ -91,9 +91,9 @@ def check_column_balance(X, target=None):
 
     for i in cols:
 
-        l = find_slices(X, [i])
+        slice = find_slices(X, [i])
         s = []
-        for w in l:
+        for w in slice:
             sub = X.query(w)
             if sub.shape[0] > 0:
                 s.append(sub.shape[0])

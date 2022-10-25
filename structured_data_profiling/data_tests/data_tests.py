@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats as ss
 from sklearn.linear_model import LinearRegression
-from sklearn.tree import DecisionTreeClassifier, export_text
+from sklearn.tree import DecisionTreeClassifier  # ,export_text
 from tqdm import tqdm
 
 
@@ -61,7 +61,7 @@ def find_deterministic_columns_binary(df, binary):
             y.iloc[jts].astype(np.int32),
         )
 
-        text = export_text(clf, feature_names=list(df[numerical_cols].columns))
+        # text = export_text(clf, feature_names=list(df[numerical_cols].columns))
         # print(export_text(clf, decimals=4))
         # print(i, text, score)
         #

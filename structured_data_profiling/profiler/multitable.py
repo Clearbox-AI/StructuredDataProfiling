@@ -1,7 +1,9 @@
-import pandas as pd
-from typing import Dict
-from structured_data_profiling.profiler import DatasetProfiler
 import pickle
+from typing import Dict
+
+import pandas as pd
+
+from structured_data_profiling.profiler import DatasetProfiler
 
 
 class MultiTableProfiler:
@@ -25,7 +27,7 @@ class MultiTableProfiler:
         """
 
         Parameters
-        ----------
+        ----------s
         df_path : str
             path of the CSV file to be profiled.
         primary_key : str, optional
@@ -33,7 +35,8 @@ class MultiTableProfiler:
         sequence_index : str, optional
             name of the column from the CSV containing a sequence index.
         target : str, optional
-            name of the column from the CSV containing a supervised learning target variable.
+            name of the column from the CSV containing a supervised learning target
+            variable.
         compression : :obj:`int`, optional
             Description of `param3`.
 

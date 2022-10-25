@@ -1,11 +1,17 @@
 import copy
 import pickle
 from typing import List
+
 import numpy as np
 import pandas as pd
 from pandas.core.tools.datetimes import _guess_datetime_format_for_array
 from tqdm import tqdm
 
+from structured_data_profiling.data_slicing import (
+    check_column_balance,
+    feature_importance,
+    find_slices,
+)
 from structured_data_profiling.data_tests import (
     check_precision,
     column_a_greater_than_b,
@@ -17,13 +23,6 @@ from structured_data_profiling.data_tests import (
     get_label_correlation,
     identify_dates,
 )
-
-from structured_data_profiling.data_slicing import (
-    feature_importance,
-    find_slices,
-    check_column_balance,
-)
-
 from structured_data_profiling.expectations import (
     add_column_expectations,
     add_conditional_expectations,
@@ -119,7 +118,11 @@ class DatasetProfiler:
         if n_samples is None:
             n_samples = int(0.1 * df.shape[0])
 
-        samples = np.random.choice(df.shape[0], min(n_samples, df.shape[0]), replace=False)
+        samples = np.random.choice(
+            df.shape[0],
+            min(n_samples, df.shape[0]),
+            replace=False,
+        )
         self.n_samples = n_samples
         self.samples = samples
 
@@ -183,7 +186,7 @@ class DatasetProfiler:
                     self.reduced_data_sample[i].sample(10).values,
                 )
                 self.datetime_formats[i] = format_time
-            except:
+            except Exception:
                 self.datetime_formats[i] = "Could not infer datetime format"
 
         self.tests = None
@@ -229,7 +232,7 @@ class DatasetProfiler:
 
         try:
             self.slice_data()
-        except:
+        except Exception:
             print("Could not find data slices.")
 
         print("Profiling finished.")
@@ -437,7 +440,7 @@ class DatasetProfiler:
                 [
                     i
                     for i in num_cols
-                    if self.column_profiles[i]["non_negative"] == True
+                    if self.column_profiles[i]["non_negative"] is True
                 ],
             ),
         ]
@@ -447,7 +450,7 @@ class DatasetProfiler:
                 [
                     i
                     for i in num_cols
-                    if self.column_profiles[i]["non_positive"] == True
+                    if self.column_profiles[i]["non_positive"] is True
                 ],
             ),
         ]
@@ -536,7 +539,7 @@ class DatasetProfiler:
             )
             data_tests["deterministic_columns_binary"] = deterministic_columns_binary
             to_drop = [i[0] for i in deterministic_columns_binary]
-        except:
+        except Exception:
             data_tests["deterministic_columns_binary"] = []
             to_drop = []
 
