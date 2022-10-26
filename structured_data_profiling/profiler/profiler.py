@@ -484,30 +484,43 @@ class DatasetProfiler:
         data_tests = {}
         xp = self.prepro.transform(self.reduced_data_sample)
         xp_nan = self.prepro.transform_missing(self.reduced_data_sample)
-
-        data_tests["is_greater_than"] = column_a_greater_than_b(
-            self.reduced_data_sample,
-            self.column_types,
-            t=0.95,
-        )
+        try:
+            data_tests["is_greater_than"] = column_a_greater_than_b(
+                self.reduced_data_sample,
+                self.column_types,
+                t=0.95,
+            )
+        except:
+            print("Could not complete is_greater_than tests.")
+            data_tests["is_greater_than"] = None
 
         print("Finding bi-variate tests...")
-        bivariate_tests = get_label_correlation(
-            xp,
-            self.prepro.cat_cols,
-            p_tr=0.66,
-            delta_tr=0.05,
-        )
-        data_tests["bivariate_tests"] = bivariate_tests
-        print("Finding missing-values tests...")
+        try:
+            bivariate_tests = get_label_correlation(
+                xp,
+                self.prepro.cat_cols,
+                p_tr=0.66,
+                delta_tr=0.05,
+            )
+            data_tests["bivariate_tests"] = bivariate_tests
 
-        missing_values_tests = get_label_correlation(
-            xp_nan,
-            self.prepro.nan_cols,
-            p_tr=0.66,
-            delta_tr=0.05,
-        )
-        data_tests["missing_values_tests"] = missing_values_tests
+        except:
+            print("Could not complete bivariate tests.")
+            data_tests["bivariate_tests"] = None
+
+        print("Finding missing-values tests...")
+        try:
+            missing_values_tests = get_label_correlation(
+                xp_nan,
+                self.prepro.nan_cols,
+                p_tr=0.66,
+                delta_tr=0.05,
+            )
+            data_tests["missing_values_tests"] = missing_values_tests
+        except:
+            print("Could not complete missing_values_tests tests.")
+            data_tests["missing_values_tests"] = None
+
         """
         cat_columns = self.reduced_data_sample.columns[
             self.reduced_data_sample.dtypes == "object"
@@ -546,11 +559,14 @@ class DatasetProfiler:
         print("Finding linear combinations...")
 
         self.reduced_data_sample = self.reduced_data_sample.drop(to_drop, axis=1)
-        linear_combinations, num_cols = find_deterministic_columns_regression(
-            self.reduced_data_sample,
-        )
-        data_tests["linear_combinations"] = linear_combinations
-
+        try:
+            linear_combinations, num_cols = find_deterministic_columns_regression(
+                self.reduced_data_sample,
+            )
+            data_tests["linear_combinations"] = linear_combinations
+        except:
+            print("Could not complete linear_combinations tests.")
+            data_tests["linear_combinations"] = None
         return data_tests
 
     def slice_data(self):
