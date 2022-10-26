@@ -567,6 +567,7 @@ class DatasetProfiler:
         except:
             print("Could not complete linear_combinations tests.")
             data_tests["linear_combinations"] = None
+
         return data_tests
 
     def slice_data(self):
