@@ -33,14 +33,17 @@ def identify_dates(data, n_samples=10):
                 timestamp_ms.append(i)
     # check if any int is compatible with dates
 
-    for i in data2.columns:
+    cat_cols = data2.columns[data2.dtypes == "object"]
+    for i in cat_cols:
 
-        samples = np.random.choice(data2.shape[0], n_samples)
+        samples = np.random.choice(data2.shape[0], 1000)
+
         parsed_dates = [
             dateparser.parse(str(data2[i].iloc[j]), region="EU") is not None
-            for j in samples
+            for j in samples if data2[i].isna().iloc[j] == False
         ]
-        if (data2[i].dtype == "object") and (sum(parsed_dates) / n_samples > 0.9):
+
+        if sum(parsed_dates) / len(parsed_dates) > 0.99:
             possible_dates.append(i)
 
     dates = {}
