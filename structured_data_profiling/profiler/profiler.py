@@ -490,7 +490,7 @@ class DatasetProfiler:
                 self.column_types,
                 t=0.95,
             )
-        except:
+        except Exception:
             print("Could not complete is_greater_than tests.")
             data_tests["is_greater_than"] = None
 
@@ -504,7 +504,7 @@ class DatasetProfiler:
             )
             data_tests["bivariate_tests"] = bivariate_tests
 
-        except:
+        except Exception:
             print("Could not complete bivariate tests.")
             data_tests["bivariate_tests"] = None
 
@@ -517,7 +517,7 @@ class DatasetProfiler:
                 delta_tr=0.05,
             )
             data_tests["missing_values_tests"] = missing_values_tests
-        except:
+        except Exception:
             print("Could not complete missing_values_tests tests.")
             data_tests["missing_values_tests"] = None
 
@@ -564,7 +564,7 @@ class DatasetProfiler:
                 self.reduced_data_sample,
             )
             data_tests["linear_combinations"] = linear_combinations
-        except:
+        except Exception:
             print("Could not complete linear_combinations tests.")
             data_tests["linear_combinations"] = None
 
