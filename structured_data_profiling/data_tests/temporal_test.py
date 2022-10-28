@@ -40,11 +40,12 @@ def identify_dates(data, n_samples=10):
 
         parsed_dates = [
             dateparser.parse(str(data2[i].iloc[j]), region="EU") is not None
-            for j in samples if data2[i].isna().iloc[j] == False
+            for j in samples
+            if data2[i].isna().iloc[j] == False
         ]
-
-        if sum(parsed_dates) / len(parsed_dates) > 0.99:
-            possible_dates.append(i)
+        if len(parsed_dates) > 0:
+            if sum(parsed_dates) / len(parsed_dates) > 0.99:
+                possible_dates.append(i)
 
     dates = {}
     for i in possible_dates:
