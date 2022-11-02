@@ -12,8 +12,14 @@ from tqdm import tqdm
 
 
 def is_text(x, i):
-    len_el = [len(i) for i in x[i].fillna('nan').sample(min(x.shape[0], 1000), replace=False)]
-    return (x[i].value_counts().values.mean() < 1.5) & (np.max(len_el)/np.min(len_el) > 10.) & (np.max(len_el) > 30.)
+    len_el = [
+        len(i) for i in x[i].fillna("nan").sample(min(x.shape[0], 1000), replace=False)
+    ]
+    return (
+        (x[i].value_counts().values.mean() < 1.5)
+        & (np.max(len_el) / np.min(len_el) > 10.0)
+        & (np.max(len_el) > 30.0)
+    )
 
 
 def fit_distributions(x: pd.Series):
@@ -52,6 +58,7 @@ def find_deterministic_columns_binary(df, binary):
     jtr = np.random.choice(np.arange(df.shape[0]), 5000, replace=True)
     jts = np.random.choice(np.arange(df.shape[0]), 2000, replace=True)
     deterministic = []
+
     numerical_cols = [
         i for i in df.columns if df[i].dtype != "object" if i not in binary
     ]

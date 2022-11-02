@@ -128,6 +128,7 @@ class DatasetProfiler:
         self.samples = samples
 
         self.data_sample = df.iloc[samples]
+
         self.original_shape = df.shape
 
         self.dataset_profile = {}
@@ -209,7 +210,7 @@ class DatasetProfiler:
 
         for i in cat_columns:
             if is_text(self.reduced_data_sample, i):
-                self.column_types[i] = 'text'
+                self.column_types[i] = "text"
 
         if contains_sequence is True:
             self.sequence = True
@@ -577,7 +578,7 @@ class DatasetProfiler:
 
     def slice_data(self):
 
-        text = [i for i in self.column_types.keys() if self.column_types[i] == 'text']
+        text = [i for i in self.column_types.keys() if self.column_types[i] == "text"]
         X = copy.deepcopy(self.data_sample.drop(text, axis=1))
         if self.primary_key:
             X = X.drop(self.primary_key, axis=1)
