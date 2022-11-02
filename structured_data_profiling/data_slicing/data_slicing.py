@@ -15,6 +15,8 @@ def feature_importance(data, target, task="classification"):
     X = copy.deepcopy(data)
     X = X.drop(target, axis=1)
     y = data[target]
+    y = data[target].astype('category')
+    y = y.cat.codes
 
     num_cols = X.columns[X.dtypes != "object"]
     cat_cols = X.columns[X.dtypes == "object"]
@@ -44,7 +46,7 @@ def find_slices(X, columns):
         if X[i].dtype != "object":
             # intervals = pd.cut(X[feat2],3,right=False).astype(str).unique()
             intervals = list(
-                pd.cut(X[feat2], 3, right=False).cat.categories.astype(str),
+                pd.cut(X[feat2], min(X[feat2].nunique(), 3), right=False).cat.categories.astype(str),
             )
             parse_column = []
             for j in range(len(intervals)):
@@ -84,7 +86,7 @@ def find_slices(X, columns):
 
 def check_column_balance(X, target=None):
     IRI = []
-    cols = list(X.columns)
+    cols = [i for i in X.columns if X[i].nunique() > 1]
 
     if target:
         cols.remove(target)

@@ -11,6 +11,11 @@ from sklearn.tree import DecisionTreeClassifier  # ,export_text
 from tqdm import tqdm
 
 
+def is_text(x, i):
+    len_el = [len(i) for i in x[i].fillna('nan').sample(min(x.shape[0], 1000), replace=False)]
+    return (x[i].value_counts().values.mean() < 1.5) & (np.max(len_el)/np.min(len_el) > 10.) & (np.max(len_el) > 30.)
+
+
 def fit_distributions(x: pd.Series):
 
     if 10 > x.nunique() > 1:

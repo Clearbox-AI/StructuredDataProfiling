@@ -22,6 +22,7 @@ from structured_data_profiling.data_tests import (
     get_features_correlation,
     get_label_correlation,
     identify_dates,
+    is_text,
 )
 from structured_data_profiling.expectations import (
     add_column_expectations,
@@ -116,7 +117,7 @@ class DatasetProfiler:
         contains_sequence = False
 
         if n_samples is None:
-            n_samples = int(0.1 * df.shape[0])
+            n_samples = max(int(0.1 * df.shape[0]), 1000)
 
         samples = np.random.choice(
             df.shape[0],
@@ -172,7 +173,7 @@ class DatasetProfiler:
         self.column_types = dict(zip(list(self.reduced_data_sample.columns), types))
 
         possible_dates = identify_dates(self.reduced_data_sample)
-        for i in tqdm(possible_dates.keys()):
+        for i in possible_dates.keys():
             self.column_types[i] = possible_dates[i]
 
         self.datetime_formats = {}
@@ -205,6 +206,10 @@ class DatasetProfiler:
         )
 
         self.ordinal_columns = ordinal_columns
+
+        for i in cat_columns:
+            if is_text(self.reduced_data_sample, i):
+                self.column_types[i] = 'text'
 
         if contains_sequence is True:
             self.sequence = True
@@ -572,14 +577,15 @@ class DatasetProfiler:
 
     def slice_data(self):
 
-        X = copy.deepcopy(self.data_sample)
+        text = [i for i in self.column_types.keys() if self.column_types[i] == 'text']
+        X = copy.deepcopy(self.data_sample.drop(text, axis=1))
         if self.primary_key:
             X = X.drop(self.primary_key, axis=1)
         c1 = check_column_balance(X, target=self.target)
         c1 = [i[0] for i in c1]
 
         if self.target:
-            c = feature_importance(X, self.target, self.regression)
+            c = feature_importance(X.fillna(0), self.target, self.regression)
             c = [i[0] for i in c]
             c1.remove(c[-1])
             list_columns = [c1[-1], c[-1]]

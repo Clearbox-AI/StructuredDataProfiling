@@ -7,6 +7,7 @@ from .data_tests import (
     fit_distributions,
     get_features_correlation,
     get_label_correlation,
+    is_text,
 )
 from .temporal_test import identify_dates, sequence_profiles
 
@@ -22,4 +23,5 @@ __all__ = [
     "get_label_correlation",
     "sequence_profiles",
     "column_a_greater_than_b",
+    "is_text",
 ]
