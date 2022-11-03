@@ -209,8 +209,11 @@ class DatasetProfiler:
         self.ordinal_columns = ordinal_columns
 
         for i in cat_columns:
-            if is_text(self.reduced_data_sample, i):
-                self.column_types[i] = "text"
+            try:
+                if is_text(self.reduced_data_sample, i):
+                    self.column_types[i] = "text"
+            except:
+                print("Error parsing text in column ", i)
 
         if contains_sequence is True:
             self.sequence = True
