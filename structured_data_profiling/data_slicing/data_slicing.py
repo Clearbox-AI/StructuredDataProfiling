@@ -95,18 +95,20 @@ def check_column_balance(X, target=None):
         cols.remove(target)
 
     for i in cols:
-
-        slice = find_slices(X, [i])
-        s = []
-        for w in slice:
-            sub = X.query(w)
-            if sub.shape[0] > 0:
-                s.append(sub.shape[0])
-        s = pd.Series(s)
-        counts = s / s.sum()
-        m = counts.max()
-        IR = counts / m
-        IRI.append(IR.mean())
+        try:
+            slice = find_slices(X, [i])
+            s = []
+            for w in slice:
+                sub = X.query(w)
+                if sub.shape[0] > 0:
+                    s.append(sub.shape[0])
+            s = pd.Series(s)
+            counts = s / s.sum()
+            m = counts.max()
+            IR = counts / m
+            IRI.append(IR.mean())
+        except:
+            print('Could not slice column: ', i)
 
     c1 = [i for i in zip(cols, IRI)]
     c1.sort(key=lambda tup: tup[1])
