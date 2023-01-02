@@ -108,7 +108,7 @@ def check_column_balance(X, target=None):
             IR = counts / m
             IRI.append(IR.mean())
         except:
-            print('Could not slice column: ', i)
+            print("Could not slice column: ", i)
 
     c1 = [i for i in zip(cols, IRI)]
     c1.sort(key=lambda tup: tup[1])
