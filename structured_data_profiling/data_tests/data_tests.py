@@ -11,19 +11,34 @@ from sklearn.tree import DecisionTreeClassifier  # ,export_text
 from tqdm import tqdm
 
 
-def is_text(x, i):
+def is_text(x: pd.Series):
+    """Checks whether column contains nominal labels or free text
+
+    Args:
+        x (pd.Series): Dataframe column containing strings
+
+    Returns:
+        Bool: True if column contains free text
+    """    
     len_el = [
-        len(i) for i in x[i].fillna("nan").sample(min(x.shape[0], 1000), replace=False)
+        len(j) for j in x.fillna("nan").sample(min(x.shape[0], 1000), replace=False)
     ]
     return (
-        (x[i].value_counts().values.mean() < 1.5)
+        (x.value_counts().values.mean() < 1.5)
         & (np.max(len_el) / np.min(len_el) > 10.0)
         & (np.max(len_el) > 30.0)
     )
 
 
 def fit_distributions(x: pd.Series):
+    """ This function uses the distfit to fit a probability distribution
+        for a given column
+    Args:
+        x (pd.Series): Column containing samples used to fit the distribution
 
+    Returns:
+        List: A list containing the best distribution and the corresponding confindence.
+    """
     if 10 > x.nunique() > 1:
         dist = distfit(method="discrete")
         dist.fit_transform(x.fillna(0), verbose=False)
@@ -36,8 +51,16 @@ def fit_distributions(x: pd.Series):
     return out
 
 
-def check_precision(x, tol=1e-8):
+def check_precision(x: pd.Series, tol=1e-8):
+    """ This function determines the numerical representation needed to represent a column.
 
+    Args:
+        x pd.Series: a Pandas Series
+        tol (float, optional): A tolerance representing an acceptable information loss. Defaults to 1e-8.
+
+    Returns:
+        string: the numerical representation chosen between ["int16", "int32", "float16", "float32"]
+    """
     types = ["int16", "int32", "float16", "float32"]
     l1 = (x.fillna(0).astype(np.int16) - x.fillna(0)).mean()
     l2 = (x.fillna(0).astype(np.int32) - x.fillna(0)).mean()
@@ -55,6 +78,19 @@ def check_precision(x, tol=1e-8):
 
 
 def find_deterministic_columns_binary(df, binary):
+    """ This test determines whether any of the columns of a given dataframe 
+    can be defined deterministically using a condition such as:
+    A = C > t
+    Where C is another numerical column from the same dataframe and t a generic
+    threshold.
+
+    Args:
+        df (pd.DataFrame): a pandas Dataframe containing a number of binary columns
+        binary (List): a list containing the names of the binary columns present in the dataframe
+
+    Returns:
+        _type_: _description_
+    """    
     jtr = np.random.choice(np.arange(df.shape[0]), 5000, replace=True)
     jts = np.random.choice(np.arange(df.shape[0]), 2000, replace=True)
     deterministic = []
@@ -86,8 +122,18 @@ def find_deterministic_columns_binary(df, binary):
     return deterministic, numerical_cols
 
 
-def find_deterministic_columns_regression(df):
-    jtr = np.random.choice(np.arange(df.shape[0]), 1000, replace=True)  # TOFIX
+def find_linear_combinations(df: pd.DataFrame):
+    """ This function finds whether any of the columns of the input dataframe
+    can be expressed as a linear combination of other columns. This is done by fitting
+    a number of linear regressors.
+
+    Args:
+        df (pd.DataFrame): an input pandas dataframe
+
+    Returns:
+        List: A list of tuples containing (column name, classifier, input columns)
+    """    
+    jtr = np.random.choice(np.arange(df.shape[0]), 1000, replace=True)
     jts = np.random.choice(np.arange(df.shape[0]), 100, replace=True)
 
     deterministic_num = []
@@ -109,10 +155,20 @@ def find_deterministic_columns_regression(df):
             numerical_cols.remove(i)
             deterministic_num.append([i, clf, copy.deepcopy(numerical_cols)])
 
-    return deterministic_num, numerical_cols
+    return deterministic_num
 
 
 def find_ordinal_columns(df, cat_columns):
+    """ This test determines whether any of the columns 
+    containing nominal labels is characterised by ordinal properties.
+
+    Args:
+        df (_type_): _description_
+        cat_columns (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """    
     ordinal_dicts = {}
 
     for i in tqdm(cat_columns):
@@ -141,6 +197,11 @@ def find_ordinal_columns(df, cat_columns):
 
 
 def get_features_correlation(X):
+    """_summary_
+
+    Args:
+        X (_type_): _description_
+    """    
     def _cramers_corrected_stat(confusion_matrix):
         """
         Calculate Cramers V statistic for categorial-categorial association,
@@ -187,6 +248,18 @@ def get_label_correlation(
     delta_tr=0.05,
     n_min=100,
 ):
+    """_summary_
+
+    Args:
+        Xproc (_type_): _description_
+        cat_cols (_type_): _description_
+        p_tr (float, optional): _description_. Defaults to 0.75.
+        delta_tr (float, optional): _description_. Defaults to 0.05.
+        n_min (int, optional): _description_. Defaults to 100.
+
+    Returns:
+        _type_: _description_
+    """
     list2d = list(cat_cols.values())
     merged = list(itertools.chain(*list2d))
     corr = []
@@ -206,6 +279,16 @@ def get_label_correlation(
 
 
 def column_a_greater_than_b(x, column_types, t=1.0):
+    """_summary_
+
+    Args:
+        x (_type_): _description_
+        column_types (_type_): _description_
+        t (float, optional): _description_. Defaults to 1.0.
+
+    Returns:
+        _type_: _description_
+    """    
     num_cols = [i for i in x.columns if column_types[i] == "number"]
     comp_matrix = dict()
     for i in tqdm(num_cols):

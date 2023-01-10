@@ -16,7 +16,7 @@ from structured_data_profiling.data_tests import (
     check_precision,
     column_a_greater_than_b,
     find_deterministic_columns_binary,
-    find_deterministic_columns_regression,
+    find_linear_combinations,
     find_ordinal_columns,
     fit_distributions,
     get_features_correlation,
@@ -36,7 +36,7 @@ from structured_data_profiling.utils import reduce_dataframe
 class DatasetProfiler:
     """
 
-    The DatasetProfiler class .
+    The DatasetProfiler class.
 
     """
 
@@ -48,6 +48,7 @@ class DatasetProfiler:
         target: str = None,
         regression: bool = False,
         protected_attributes: List = [],
+        personal_identifiers: List = [],
         n_samples: int = None,
         compression: str = None,
         separator: str = ",",
@@ -91,6 +92,7 @@ class DatasetProfiler:
 
         self.path = df_path
 
+        # Assigns primary key and makes sure key does not contain missing values
         if primary_key is not None:
             if type(primary_key) != list:
                 primary_key = [primary_key]
@@ -106,6 +108,7 @@ class DatasetProfiler:
         else:
             self.primary_key = None
 
+        # 
         if target:
             self.target = target
             self.regression = regression
@@ -114,6 +117,8 @@ class DatasetProfiler:
             self.regression = False
 
         self.protected_attributes = protected_attributes
+        self.pii = personal_identifiers
+
         contains_sequence = False
 
         if n_samples is None:
@@ -124,6 +129,7 @@ class DatasetProfiler:
             min(n_samples, df.shape[0]),
             replace=False,
         )
+
         self.n_samples = n_samples
         self.samples = samples
 
@@ -202,7 +208,7 @@ class DatasetProfiler:
         ]
 
         ordinal_columns = find_ordinal_columns(
-            self.reduced_data_sample,
+            df,
             cat_columns,
         )
 
@@ -210,7 +216,7 @@ class DatasetProfiler:
 
         for i in cat_columns:
             try:
-                if is_text(self.reduced_data_sample, i):
+                if is_text(self.reduced_data_sample[i]):
                     self.column_types[i] = "text"
             except:
                 print("Error parsing text in column ", i)
@@ -222,7 +228,7 @@ class DatasetProfiler:
             self.sequence = False
         return
 
-    def profile(self, tol: float = 1e-6, n_bins=5):
+    def profile(self):
 
         self.column_profiler(self.reduced_data_sample, fit_distribution=False)
 
@@ -235,7 +241,7 @@ class DatasetProfiler:
         # self.high_cardinality = high_cardinality
         # self.rare_labels = rare_labels
         # self.unique_value = unique
-
+        n_bins=5
         self.prepro = Preprocessor(column_types=self.column_types, n_bins=n_bins)
         self.tests = self.data_tests()
 
@@ -409,6 +415,7 @@ class DatasetProfiler:
         return
 
     def summary(self):
+
         report = pd.DataFrame(columns=["profiling_type", "outcome"])
         num_cols = [
             i
@@ -493,6 +500,21 @@ class DatasetProfiler:
         data_tests = {}
         xp = self.prepro.transform(self.reduced_data_sample)
         xp_nan = self.prepro.transform_missing(self.reduced_data_sample)
+
+        string_dates = [
+            i for i in self.column_types.keys() if self.column_types[i] == "string/date"
+        ]
+        timestamps = [
+            i
+            for i in self.column_types.keys()
+            if self.column_types[i]
+            in [
+                "number/timestamps",
+                "number/timestamps_ms",
+            ]
+        ]
+        dates = string_dates + timestamps
+
         try:
             data_tests["is_greater_than"] = column_a_greater_than_b(
                 self.reduced_data_sample,
@@ -517,7 +539,7 @@ class DatasetProfiler:
             print("Could not complete bivariate tests.")
             data_tests["bivariate_tests"] = None
 
-        print("Finding missing-values tests...")
+        print("Looking for correlations between missing values...")
         try:
             missing_values_tests = get_label_correlation(
                 xp_nan,
@@ -569,7 +591,7 @@ class DatasetProfiler:
 
         self.reduced_data_sample = self.reduced_data_sample.drop(to_drop, axis=1)
         try:
-            linear_combinations, num_cols = find_deterministic_columns_regression(
+            linear_combinations = find_linear_combinations(
                 self.reduced_data_sample,
             )
             data_tests["linear_combinations"] = linear_combinations
