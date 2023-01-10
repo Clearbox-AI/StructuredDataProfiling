@@ -19,7 +19,7 @@ def is_text(x: pd.Series):
 
     Returns:
         Bool: True if column contains free text
-    """    
+    """
     len_el = [
         len(j) for j in x.fillna("nan").sample(min(x.shape[0], 1000), replace=False)
     ]
@@ -31,7 +31,7 @@ def is_text(x: pd.Series):
 
 
 def fit_distributions(x: pd.Series):
-    """ This function uses the distfit to fit a probability distribution
+    """This function uses the distfit to fit a probability distribution
         for a given column
     Args:
         x (pd.Series): Column containing samples used to fit the distribution
@@ -52,7 +52,7 @@ def fit_distributions(x: pd.Series):
 
 
 def check_precision(x: pd.Series, tol=1e-8):
-    """ This function determines the numerical representation needed to represent a column.
+    """This function determines the numerical representation needed to represent a certain column.
 
     Args:
         x pd.Series: a Pandas Series
@@ -78,7 +78,7 @@ def check_precision(x: pd.Series, tol=1e-8):
 
 
 def find_deterministic_columns_binary(df, binary):
-    """ This test determines whether any of the columns of a given dataframe 
+    """This test determines whether any of the columns of a given dataframe
     can be defined deterministically using a condition such as:
     A = C > t
     Where C is another numerical column from the same dataframe and t a generic
@@ -90,7 +90,7 @@ def find_deterministic_columns_binary(df, binary):
 
     Returns:
         _type_: _description_
-    """    
+    """
     jtr = np.random.choice(np.arange(df.shape[0]), 5000, replace=True)
     jts = np.random.choice(np.arange(df.shape[0]), 2000, replace=True)
     deterministic = []
@@ -123,7 +123,7 @@ def find_deterministic_columns_binary(df, binary):
 
 
 def find_linear_combinations(df: pd.DataFrame):
-    """ This function finds whether any of the columns of the input dataframe
+    """This function finds whether any of the columns of the input dataframe
     can be expressed as a linear combination of other columns. This is done by fitting
     a number of linear regressors.
 
@@ -132,7 +132,7 @@ def find_linear_combinations(df: pd.DataFrame):
 
     Returns:
         List: A list of tuples containing (column name, classifier, input columns)
-    """    
+    """
     jtr = np.random.choice(np.arange(df.shape[0]), 1000, replace=True)
     jts = np.random.choice(np.arange(df.shape[0]), 100, replace=True)
 
@@ -159,7 +159,7 @@ def find_linear_combinations(df: pd.DataFrame):
 
 
 def find_ordinal_columns(df, cat_columns):
-    """ This test determines whether any of the columns 
+    """This test determines whether any of the columns
     containing nominal labels is characterised by ordinal properties.
 
     Args:
@@ -168,7 +168,7 @@ def find_ordinal_columns(df, cat_columns):
 
     Returns:
         _type_: _description_
-    """    
+    """
     ordinal_dicts = {}
 
     for i in tqdm(cat_columns):
@@ -201,7 +201,8 @@ def get_features_correlation(X):
 
     Args:
         X (_type_): _description_
-    """    
+    """
+
     def _cramers_corrected_stat(confusion_matrix):
         """
         Calculate Cramers V statistic for categorial-categorial association,
@@ -288,7 +289,7 @@ def column_a_greater_than_b(x, column_types, t=1.0):
 
     Returns:
         _type_: _description_
-    """    
+    """
     num_cols = [i for i in x.columns if column_types[i] == "number"]
     comp_matrix = dict()
     for i in tqdm(num_cols):

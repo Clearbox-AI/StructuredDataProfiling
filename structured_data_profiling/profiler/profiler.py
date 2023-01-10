@@ -108,7 +108,7 @@ class DatasetProfiler:
         else:
             self.primary_key = None
 
-        # 
+        #
         if target:
             self.target = target
             self.regression = regression
@@ -241,7 +241,7 @@ class DatasetProfiler:
         # self.high_cardinality = high_cardinality
         # self.rare_labels = rare_labels
         # self.unique_value = unique
-        n_bins=5
+        n_bins = 5
         self.prepro = Preprocessor(column_types=self.column_types, n_bins=n_bins)
         self.tests = self.data_tests()
 
@@ -391,7 +391,7 @@ class DatasetProfiler:
         return
 
     def dataset_profiler(self):
-
+        """_summary_"""
         duplicates = self.reduced_data_sample.duplicated()
         if len(duplicates > 0):
             duplicates_percentage = (
