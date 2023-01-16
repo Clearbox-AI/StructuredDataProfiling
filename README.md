@@ -53,7 +53,7 @@ The profiler generates 3 json files describing the ingested dataset. These json 
 
 The process of generating expectations makes use of the great_expectations library to produce an HTML file contaning data docs. An example of data doc for a given column can be seen in the image below.
 
-<img alt="data docs example 1" src="https://raw.githubusercontent.com/Clearbox-AI/StructuredDataProfiling/main/examples/num_columns.PNG"/>
+<img alt="data docs example 1" src="https://raw.githubusercontent.com/Clearbox-AI/StructuredDataProfiling/main/examples/num_columns.png"/>
 
 
 # Examples
