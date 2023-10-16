@@ -52,14 +52,17 @@ def fit_distributions(x: pd.Series):
 
 
 def check_precision(x: pd.Series, tol=1e-8):
-    """This function determines the numerical representation needed to represent a certain column.
+    """This function determines the numerical representation needed to represent a
+    certain column.
 
     Args:
         x pd.Series: a Pandas Series
-        tol (float, optional): A tolerance representing an acceptable information loss. Defaults to 1e-8.
+        tol (float, optional): A tolerance representing an acceptable information loss.
+        Defaults to 1e-8.
 
     Returns:
-        string: the numerical representation chosen between ["int16", "int32", "float16", "float32"]
+        string: the numerical representation chosen between ["int16", "int32", "float16"
+        , "float32"]
     """
     types = ["int16", "int32", "float16", "float32"]
     l1 = (x.fillna(0).astype(np.int16) - x.fillna(0)).mean()
@@ -86,7 +89,8 @@ def find_deterministic_columns_binary(df, binary):
 
     Args:
         df (pd.DataFrame): a pandas Dataframe containing a number of binary columns
-        binary (List): a list containing the names of the binary columns present in the dataframe
+        binary (List): a list containing the names of the binary columns present in the
+        dataframe
 
     Returns:
         _type_: _description_
