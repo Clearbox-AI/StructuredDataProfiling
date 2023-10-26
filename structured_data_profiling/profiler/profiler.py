@@ -1,6 +1,6 @@
 import copy
 import pickle
-from typing import List
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
@@ -42,7 +42,7 @@ class DatasetProfiler:
 
     def __init__(
         self,
-        df_path: str,
+        df_path: Union[str, pd.DataFram],
         primary_key: str = None,
         sequence_index: str = None,
         target: str = None,
@@ -60,8 +60,8 @@ class DatasetProfiler:
 
         Parameters
         ----------
-        df_path : str
-            path of the CSV file to be profiled.
+        df_path : Union[str, pd.DataFrame]
+            path of the CSV file to be profiled or directly a pandas dataframe.
         primary_key : str, optional
             name of the column defining the CSV primary key (composite).
         sequence_index : str, optional
@@ -73,14 +73,19 @@ class DatasetProfiler:
             Description of `param3`.
 
         """
-        df = pd.read_csv(
-            df_path,
-            compression=compression,
-            sep=separator,
-            decimal=decimals,
-            thousands=thousands,
-            encoding=encoding,
-        )
+        if isinstance(df_path, str):
+            df = pd.read_csv(
+                df_path,
+                compression=compression,
+                sep=separator,
+                decimal=decimals,
+                thousands=thousands,
+                encoding=encoding,
+            )
+            self.path = df_path
+        elif isinstance(df_path, pd.DataFrame):
+            df = df_path
+            self.path = None
 
         self.io_meta = {
             "compression": compression,
@@ -89,8 +94,6 @@ class DatasetProfiler:
             "decimals": decimals,
             "encoding": encoding,
         }
-
-        self.path = df_path
 
         # Assigns primary key and makes sure key does not contain missing values
         if primary_key is not None:
@@ -626,7 +629,9 @@ class DatasetProfiler:
         import great_expectations as ge
 
         if suite_name is None:
-            suite_name = self.path.split("/")[-1]
+            suite_name = (
+                self.path.split("/")[-1] if self.path else "dataset_profiler_results"
+            )
         data_context = ge.data_context.DataContext()
         suite = data_context.create_expectation_suite(
             suite_name,
