@@ -42,7 +42,7 @@ class DatasetProfiler:
 
     def __init__(
         self,
-        df_path: Union[str, pd.DataFram],
+        df_path: Union[str, pd.DataFrame],
         primary_key: str = None,
         sequence_index: str = None,
         target: str = None,
